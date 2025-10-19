@@ -1,0 +1,51 @@
+<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="url(#grad1)"/>
+  
+  <!-- EU Stars -->
+  <g fill="#ffffff" opacity="0.8">
+    <polygon points="100,80 110,110 140,110 115,130 125,160 100,140 75,160 85,130 60,110 90,110" />
+    <polygon points="500,60 508,85 533,85 512,100 520,125 500,110 480,125 488,100 467,85 492,85" />
+    <polygon points="80,300 88,320 108,320 92,335 100,355 80,340 60,355 68,335 52,320 72,320" />
+    <polygon points="520,320 528,340 548,340 532,355 540,375 520,360 500,375 508,355 492,340 512,340" />
+  </g>
+  
+  <!-- Central Circle (EU Flag) -->
+  <circle cx="300" cy="200" r="80" fill="#ffffff" opacity="0.9"/>
+  <circle cx="300" cy="200" r="70" fill="#003399"/>
+  
+  <!-- EU Stars in Circle -->
+  <g fill="#ffffff">
+    <polygon points="300,140 305,155 320,155 308,165 313,180 300,170 287,180 292,165 280,155 295,155" />
+    <polygon points="350,160 354,170 364,170 356,177 360,187 350,180 340,187 344,177 336,170 346,170" />
+    <polygon points="350,240 354,250 364,250 356,257 360,267 350,260 340,267 344,257 336,250 346,250" />
+    <polygon points="300,260 305,275 320,275 308,285 313,300 300,290 287,300 292,285 280,275 295,275" />
+    <polygon points="250,240 254,250 264,250 256,257 260,267 250,260 240,267 244,257 236,250 246,250" />
+    <polygon points="250,160 254,170 264,170 256,177 260,187 250,180 240,187 244,177 236,170 246,170" />
+  </g>
+  
+  <!-- Erasmus Text -->
+  <text x="300" y="320" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="url(#grad2)" text-anchor="middle">ERASMUS</text>
+  <text x="300" y="350" font-family="Arial, sans-serif" font-size="18" fill="#ffffff" text-anchor="middle" opacity="0.9">Education Program</text>
+  
+  <!-- Decorative Elements -->
+  <circle cx="150" cy="100" r="3" fill="#ffffff" opacity="0.6"/>
+  <circle cx="450" cy="120" r="3" fill="#ffffff" opacity="0.6"/>
+  <circle cx="120" cy="250" r="3" fill="#ffffff" opacity="0.6"/>
+  <circle cx="480" cy="280" r="3" fill="#ffffff" opacity="0.6"/>
+  <circle cx="200" cy="350" r="3" fill="#ffffff" opacity="0.6"/>
+  <circle cx="400" cy="320" r="3" fill="#ffffff" opacity="0.6"/>
+</svg>
+

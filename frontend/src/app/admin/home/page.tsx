@@ -1,0 +1,2461 @@
+'use client';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+
+export default function AdminHome() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState('');
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isContactSaving, setIsContactSaving] = useState(false);
+  const [formKey, setFormKey] = useState(0); // Form reset için
+  const router = useRouter();
+
+  // Helper function to handle date conversion without timezone issues
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    // Add timezone offset to prevent date shifting
+    const offset = date.getTimezoneOffset();
+    const adjustedDate = new Date(date.getTime() + (offset * 60 * 1000));
+    return adjustedDate.toISOString().split('T')[0];
+  };
+
+  // Helper function to update daily program from duration
+  const updateDailyProgramFromDuration = (duration: string) => {
+    const dayCount = parseInt(duration) || 0;
+    if (dayCount > 0) {
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && (window as any).updateDailyProgramFields) {
+          (window as any).updateDailyProgramFields(dayCount);
+        }
+      }, 100);
+    }
+  };
+
+  // Blog data from API
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
+
+  const [contactInfo, setContactInfo] = useState({
+    address: {
+      id: 0,
+      title: 'Adres',
+      type: 'address',
+      details: '["Kısla Mah. 37 Sk. Cengizhan Apt. B Girişi No: 6", "İç Kapı No: 102 Muratpaşa, Antalya / Türkiye"]',
+      order: 1,
+      isPrimary: true
+    },
+    phone: {
+      id: 0,
+      title: 'Telefon',
+      type: 'phone',
+      details: '["+90 505 274 90 36"]',
+      order: 2,
+      isPrimary: true
+    },
+    email: {
+      id: 0,
+      title: 'E-posta',
+      type: 'email',
+      details: '["info@edu-excellence.net"]',
+      order: 3,
+      isPrimary: true
+    }
+  });
+
+  const [ka1Courses, setKa1Courses] = useState<any[]>([]);
+
+  const [ka2Projects, setKa2Projects] = useState<any[]>([]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const adminAuth = localStorage.getItem('adminLoggedIn');
+      const token = localStorage.getItem('adminToken');
+      
+      if (adminAuth === 'true' && token) {
+        try {
+          // Validate token with backend
+          const response = await fetch('https://localhost:7166/api/auth/validate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(token),
+          });
+
+          if (response.ok) {
+            setIsAuthenticated(true);
+          } else {
+            // Token invalid, clear storage and redirect
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminData');
+            localStorage.removeItem('adminLoggedIn');
+            router.push('/admin');
+          }
+        } catch (error) {
+          console.error('Token validation error:', error);
+          // Network error, clear storage and redirect
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminData');
+          localStorage.removeItem('adminLoggedIn');
+          router.push('/admin');
+        }
+      } else {
+        router.push('/admin');
+      }
+      setIsLoading(false);
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Fetch data from API
+  const fetchData = async () => {
+    try {
+      // Fetch blogs
+      const blogsResponse = await fetch('https://localhost:7166/api/Blogs');
+      if (blogsResponse.ok) {
+        const blogsData = await blogsResponse.json();
+        setBlogs(blogsData);
+      }
+
+      // Fetch courses
+        const coursesResponse = await fetch('https://localhost:7166/api/Courses');
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json();
+        setCourses(coursesData);
+        // Also set ka1Courses for backward compatibility
+        setKa1Courses(coursesData);
+      }
+
+      // Fetch KA2 projects
+      const ka2Response = await fetch('https://localhost:7166/api/Ka2');
+      if (ka2Response.ok) {
+        const ka2Data = await ka2Response.json();
+        setKa2Projects(ka2Data);
+      }
+
+      // Fetch contacts
+      const contactsResponse = await fetch('https://localhost:7166/api/Contact', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+      if (contactsResponse.ok) {
+        const contactsData = await contactsResponse.json();
+        
+        // Update contactInfo with fetched data
+        const addressContact = contactsData.find((c: any) => c.type === 'address');
+        const phoneContact = contactsData.find((c: any) => c.type === 'phone');
+        const emailContact = contactsData.find((c: any) => c.type === 'email');
+        
+        if (addressContact) setContactInfo(prev => ({ ...prev, address: addressContact }));
+        if (phoneContact) setContactInfo(prev => ({ ...prev, phone: phoneContact }));
+        if (emailContact) setContactInfo(prev => ({ ...prev, email: emailContact }));
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('adminLoggedIn');
+    router.push('/admin');
+  };
+
+  const generateDailyProgramFields = (dayCount: number, existingProgram?: string[]) => {
+    const container = document.getElementById('dailyProgramContainer');
+    if (!container) return;
+
+    // Smooth animation için önce fade out
+    container.style.opacity = '0.5';
+    container.style.transition = 'opacity 0.3s ease';
+    
+    setTimeout(() => {
+      container.innerHTML = `
+        <div class="mb-4">
+          <div class="flex items-center justify-between mb-3">
+            <label class="block text-sm font-medium text-gray-900">Daily Program</label>
+            <div class="flex items-center space-x-2">
+              <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">${dayCount} days</span>
+            </div>
+          </div>
+          <p class="text-xs text-gray-600 mb-4 bg-gray-50 p-2 rounded-lg">
+            ✨ Program fields are automatically generated from duration. Enter details for each day.
+          </p>
+        </div>
+        <div id="dailyFields" class="space-y-3">
+          ${Array.from({ length: dayCount }, (_, i) => `
+            <div class="daily-field-item bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-all duration-200">
+              <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-semibold text-gray-900 flex items-center">
+                  <span class="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-xs font-bold mr-2">${i + 1}</span>
+                  Day ${i + 1}
+                </label>
+                <span class="text-xs text-gray-500">${(existingProgram?.[i] || '').length > 0 ? '✅' : '⏳'}</span>
+              </div>
+              <textarea
+                name="day_${i + 1}"
+                rows="2"
+                placeholder="Enter Day ${i + 1} program details..."
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900 resize-none"
+                oninput="updateDayStatus(${i + 1}, this.value)"
+              >${existingProgram?.[i] || ''}</textarea>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      
+      // Smooth animation için fade in
+      container.style.opacity = '1';
+    }, 150);
+  };
+
+  // Set up global functions for daily program management
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Global function for updating daily program fields
+      (window as any).updateDailyProgramFields = (dayCount: number) => {
+        const existingValues: string[] = [];
+        const dailyFields = document.getElementById('dailyFields');
+        if (dailyFields) {
+          const inputs = dailyFields.querySelectorAll('input[name^="day_"]');
+          inputs.forEach((input: any) => {
+            existingValues.push(input.value);
+          });
+        }
+        generateDailyProgramFields(dayCount, existingValues);
+      };
+
+      // Global function for updating daily program from duration
+      (window as any).updateDailyProgramFromDuration = () => {
+        const durationInput = document.getElementById('courseDuration') as HTMLInputElement;
+        if (durationInput) {
+          const duration = durationInput.value.trim();
+          // Just get the number directly
+          const dayCount = parseInt(duration);
+          if (dayCount > 0 && dayCount <= 30) {
+            // Preserve existing values
+            const existingValues: string[] = [];
+            const dailyFields = document.getElementById('dailyFields');
+            if (dailyFields) {
+              const inputs = dailyFields.querySelectorAll('textarea[name^="day_"]');
+              inputs.forEach((input: any) => {
+                existingValues.push(input.value);
+              });
+            }
+            generateDailyProgramFields(dayCount, existingValues);
+          }
+        }
+      };
+
+      // Global function for updating day status
+      (window as any).updateDayStatus = (dayNumber: number, value: string) => {
+        const statusElement = document.querySelector(`textarea[name="day_${dayNumber}"]`)?.parentElement?.querySelector('.text-xs');
+        if (statusElement) {
+          statusElement.textContent = value.length > 0 ? '✅' : '⏳';
+        }
+      };
+
+      // Global function for regenerating days
+      (window as any).regenerateDays = () => {
+        const durationInput = document.getElementById('courseDuration') as HTMLInputElement;
+        if (durationInput) {
+          updateDailyProgramFromDuration(durationInput.value);
+        }
+      };
+    }
+  }, []);
+
+  const handleAdd = (type: string) => {
+    setModalType(type);
+    setEditingItem(null);
+    setShowModal(true);
+    if (type === 'ka1course') {
+      setTimeout(() => generateDailyProgramFields(1), 100); // Start with 1 day
+    }
+  };
+
+  const handleEdit = (type: string, item: any) => {
+    setModalType(type);
+    setEditingItem(item);
+    setFormKey(prev => prev + 1); // Form'u reset et
+    setShowModal(true);
+    if (type === 'ka1course') {
+      // Extract day count from duration (e.g., "3 DAYS" -> 3)
+        const dayCount = item?.duration ? parseInt(item.duration.match(/\d+/)?.[0] || '1') : 1;
+      setTimeout(() => generateDailyProgramFields(dayCount, item?.dailyPrograms || []), 100);
+    }
+  };
+
+
+  const handleContactSave = async (data: any) => {
+    setIsContactSaving(true);
+    try {
+      // Validasyon
+      if (!data.addressTitle?.trim()) {
+        toast.error('Adres başlığı gereklidir!');
+        return;
+      }
+      if (!data.addressDetails?.trim()) {
+        toast.error('Adres detayları gereklidir!');
+        return;
+      }
+      if (!data.phoneTitle?.trim()) {
+        toast.error('Telefon başlığı gereklidir!');
+        return;
+      }
+      if (!data.phoneDetails?.trim()) {
+        toast.error('Telefon numaraları gereklidir!');
+        return;
+      }
+      if (!data.emailTitle?.trim()) {
+        toast.error('E-posta başlığı gereklidir!');
+        return;
+      }
+      if (!data.emailDetails?.trim()) {
+        toast.error('E-posta adresleri gereklidir!');
+        return;
+      }
+
+      // E-posta format validasyonu
+      const emailLines = data.emailDetails.split('\n').filter((line: string) => line.trim());
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      for (const email of emailLines) {
+        if (!emailRegex.test(email.trim())) {
+          alert(`Geçersiz e-posta formatı: ${email}`);
+          return;
+        }
+      }
+
+      // Telefon format validasyonu
+      const phoneLines = data.phoneDetails.split('\n').filter((line: string) => line.trim());
+      const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+      for (const phone of phoneLines) {
+        if (!phoneRegex.test(phone.trim())) {
+          alert(`Geçersiz telefon formatı: ${phone}`);
+          return;
+        }
+      }
+
+      // API'ye gönderilecek data hazırla
+      const contactsToUpdate = [
+        {
+          ...contactInfo.address,
+          title: data.addressTitle.trim(),
+          details: JSON.stringify(data.addressDetails.split('\n').filter((line: string) => line.trim()))
+        },
+        {
+          ...contactInfo.phone,
+          title: data.phoneTitle.trim(),
+          details: JSON.stringify(data.phoneDetails.split('\n').filter((line: string) => line.trim()))
+        },
+        {
+          ...contactInfo.email,
+          title: data.emailTitle.trim(),
+          details: JSON.stringify(data.emailDetails.split('\n').filter((line: string) => line.trim()))
+        }
+      ];
+
+      // API çağrısı
+      const response = await fetch('https://localhost:7166/api/Contact/bulk-update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(contactsToUpdate)
+      });
+
+      if (response.ok) {
+        // Local state'i güncelle
+        setContactInfo({
+          address: {
+            ...contactInfo.address,
+            title: data.addressTitle.trim(),
+            details: JSON.stringify(data.addressDetails.split('\n').filter((line: string) => line.trim()))
+          },
+          phone: {
+            ...contactInfo.phone,
+            title: data.phoneTitle.trim(),
+            details: JSON.stringify(data.phoneDetails.split('\n').filter((line: string) => line.trim()))
+          },
+          email: {
+            ...contactInfo.email,
+            title: data.emailTitle.trim(),
+            details: JSON.stringify(data.emailDetails.split('\n').filter((line: string) => line.trim()))
+          }
+        });
+        
+        toast.success('İletişim bilgileri başarıyla güncellendi!');
+        setShowContactModal(false);
+      } else {
+        const errorData = await response.json();
+        toast.error(`Güncelleme hatası: ${errorData.message || 'Bilinmeyen hata'}`);
+      }
+    } catch (error) {
+      console.error('Contact save error:', error);
+      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
+    } finally {
+      setIsContactSaving(false);
+    }
+  };
+
+  // Şifre validasyon fonksiyonu
+  const validatePassword = (password: string) => {
+    const errors = [];
+    
+    if (password.length < 8) {
+      errors.push('En az 8 karakter olmalıdır');
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      errors.push('En az bir büyük harf içermelidir');
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      errors.push('En az bir küçük harf içermelidir');
+    }
+    
+    if (!/[0-9]/.test(password)) {
+      errors.push('En az bir rakam içermelidir');
+    }
+    
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+      errors.push('En az bir özel karakter içermelidir');
+    }
+    
+    return errors;
+  };
+
+  // Şifre değiştirme fonksiyonu
+  const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const currentPassword = formData.get('currentPassword') as string;
+    const newPassword = formData.get('newPassword') as string;
+    const confirmPassword = formData.get('confirmPassword') as string;
+
+    // Client-side validasyon
+    const validationErrors = validatePassword(newPassword);
+    if (validationErrors.length > 0) {
+      toast.error(`Şifre gereksinimleri: ${validationErrors.join(', ')}`);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Yeni şifreler eşleşmiyor!');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+
+      const response = await fetch('https://localhost:7166/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Şifre başarıyla değiştirildi!');
+        setShowPasswordModal(false);
+        (e.target as HTMLFormElement).reset();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Şifre değiştirme başarısız!');
+      }
+    } catch (error) {
+      console.error('Password change error:', error);
+      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
+    }
+  };
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    
+    // Add new files to existing ones instead of replacing
+    const updatedImages = [...selectedImages, ...files];
+    setSelectedImages(updatedImages);
+    
+    // Create preview URLs for new files and add to existing previews
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setImagePreviews([...imagePreviews, ...newPreviews]);
+    
+    // Clear the input so the same files can be selected again if needed
+    event.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    const newImages = selectedImages.filter((_, i) => i !== index);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    
+    // Revoke the URL to free memory
+    URL.revokeObjectURL(imagePreviews[index]);
+    
+    setSelectedImages(newImages);
+    setImagePreviews(newPreviews);
+  };
+
+  const handleDelete = async (type: string, id: number) => {
+    if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
+      const token = localStorage.getItem('adminToken');
+      
+      try {
+        switch (type) {
+          case 'blog':
+            console.log('Deleting blog with id:', id);
+            
+            const blogResponse = await fetch(`https://localhost:7166/api/Blogs/${id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            console.log('Blog delete response status:', blogResponse.status);
+            
+            if (blogResponse.ok) {
+              console.log('Blog deleted successfully');
+              setBlogs(blogs.filter(blog => blog.id !== id));
+            } else {
+              const errorText = await blogResponse.text();
+              console.error('Blog delete failed:', errorText);
+              alert('Blog delete failed: ' + errorText);
+            }
+            break;
+            
+          case 'ka1course':
+            console.log('Deleting course with id:', id);
+            
+            const courseResponse = await fetch(`https://localhost:7166/api/Courses/${id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            console.log('Delete response status:', courseResponse.status);
+            
+            if (courseResponse.ok) {
+              console.log('Course deleted successfully');
+              setCourses(courses.filter(course => course.id !== id));
+              setKa1Courses(ka1Courses.filter(course => course.id !== id));
+            } else {
+              const errorText = await courseResponse.text();
+              console.error('Delete failed:', errorText);
+              alert('Delete failed: ' + errorText);
+            }
+            break;
+            
+          case 'ka2project':
+            console.log('Deleting KA2 project with id:', id);
+            
+            const ka2Response = await fetch(`https://localhost:7166/api/Ka2/${id}`, {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+            
+            console.log('KA2 delete response status:', ka2Response.status);
+            
+            if (ka2Response.ok) {
+              console.log('KA2 project deleted successfully');
+              setKa2Projects(ka2Projects.filter(project => project.id !== id));
+              toast.success('KA2 projesi başarıyla silindi!');
+            } else {
+              const errorText = await ka2Response.text();
+              console.error('KA2 delete failed:', errorText);
+              toast.error('KA2 projesi silinemedi: ' + errorText);
+            }
+            break;
+        }
+      } catch (error) {
+        console.error('Error deleting item:', error);
+        alert('Error deleting item. Please try again.');
+      }
+    }
+  };
+
+  const handleSave = async (type: string, data: any, e?: React.FormEvent) => {
+    console.log('handleSave called with type:', type, 'data:', data);
+    const token = localStorage.getItem('adminToken');
+    
+    if (!token) {
+      console.error('No admin token found');
+      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      return;
+    }
+    
+    try {
+      switch (type) {
+        case 'blog':
+          console.log('Processing blog case...');
+          console.log('Selected images:', selectedImages);
+          
+          // Convert selected images to base64 or URLs (only if there are images)
+          let imageUrls: string[] = [];
+          if (selectedImages && selectedImages.length > 0) {
+            try {
+              imageUrls = await Promise.all(
+                selectedImages.map(async (file) => {
+                  return new Promise((resolve, reject) => {
+                    try {
+                      // Compress image to reduce size
+                      const canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d');
+                      const img = new Image();
+                      
+                      img.onload = () => {
+                        try {
+                          // Set canvas size (max 800px width, maintain aspect ratio)
+                          const maxWidth = 800;
+                          const maxHeight = 600;
+                          let { width, height } = img;
+                          
+                          if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                          }
+                          if (height > maxHeight) {
+                            width = (width * maxHeight) / height;
+                            height = maxHeight;
+                          }
+                          
+                          canvas.width = width;
+                          canvas.height = height;
+                          
+                          // Draw and compress with WebP for better quality
+                          ctx?.drawImage(img, 0, 0, width, height);
+                          
+                          // Try WebP first (better quality, smaller size)
+                          let compressedDataUrl = canvas.toDataURL('image/webp', 0.8); // 80% quality for WebP
+                          
+                          // If WebP is not supported, fallback to JPEG with better quality
+                          if (compressedDataUrl.length === 0 || compressedDataUrl.includes('data:,')) {
+                            compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality for JPEG
+                          }
+                          
+                          // If still too large, compress more
+                          if (compressedDataUrl.length > 100000) { // Increased limit for better quality
+                            if (compressedDataUrl.includes('image/webp')) {
+                              compressedDataUrl = canvas.toDataURL('image/webp', 0.6); // 60% quality
+                            } else {
+                              compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5); // 50% quality
+                            }
+                          }
+                          
+                          console.log('Compressed image size:', compressedDataUrl.length);
+                          resolve(compressedDataUrl);
+                        } catch (error) {
+                          console.error('Error compressing image:', error);
+                          reject(error);
+                        }
+                      };
+                      
+                      img.onerror = () => {
+                        console.error('Error loading image');
+                        reject(new Error('Failed to load image'));
+                      };
+                      
+                      const reader = new FileReader();
+                      reader.onload = (e) => {
+                        img.src = e.target?.result as string;
+                      };
+                      reader.onerror = () => {
+                        console.error('Error reading file');
+                        reject(new Error('Failed to read file'));
+                      };
+                      reader.readAsDataURL(file);
+                    } catch (error) {
+                      console.error('Error in image processing:', error);
+                      reject(error);
+                    }
+                  });
+                })
+              );
+            } catch (error) {
+              console.error('Error processing images:', error);
+              console.log('Falling back to simple base64 conversion...');
+              
+              // Fallback: simple base64 conversion without compression
+              try {
+                imageUrls = await Promise.all(
+                  selectedImages.map(async (file) => {
+                    return new Promise((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = (e) => resolve(e.target?.result as string);
+                      reader.onerror = () => reject(new Error('Failed to read file'));
+                      reader.readAsDataURL(file);
+                    });
+                  })
+                );
+                console.log('Fallback conversion successful');
+              } catch (fallbackError) {
+                console.error('Fallback conversion also failed:', fallbackError);
+                alert('Resim işleme hatası: ' + fallbackError);
+                return; // Stop execution if both methods fail
+              }
+            }
+          }
+
+          const blogData: any = {
+            title: data.title,
+            excerpt: data.content,
+            fullContent: data.fullContent || data.content,
+            type: data.type || 'news',
+            author: 'Admin',
+            images: imageUrls
+          };
+
+          // Only add imageUrl if there are images
+          if (imageUrls.length > 0) {
+            blogData.imageUrl = imageUrls[0];
+          }
+
+          console.log('Blog data being sent:', blogData);
+          console.log('Selected images count:', selectedImages?.length || 0);
+          console.log('Image URLs count:', imageUrls.length);
+
+          if (editingItem) {
+            const updateData = { ...blogData, id: editingItem.id };
+            console.log('Updating blog with data:', updateData);
+            
+            const response = await fetch(`https://localhost:7166/api/Blogs/${editingItem.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(updateData)
+            });
+            
+            console.log('Blog update response status:', response.status);
+            
+            if (response.ok) {
+              const updatedBlog = await response.json();
+              console.log('Updated blog:', updatedBlog);
+              setBlogs(blogs.map(blog => blog.id === editingItem.id ? updatedBlog : blog));
+            } else {
+              const errorText = await response.text();
+              console.error('Blog update failed:', errorText);
+              alert('Blog update failed: ' + errorText);
+            }
+          } else {
+            const response = await fetch('https://localhost:7166/api/Blogs', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(blogData)
+            });
+            
+            console.log('Blog create response status:', response.status);
+            
+            if (response.ok) {
+              const newBlog = await response.json();
+              console.log('Created blog:', newBlog);
+              setBlogs([...blogs, newBlog]);
+              alert('Blog başarıyla oluşturuldu!');
+            } else {
+              const errorText = await response.text();
+              console.error('Blog create failed:', errorText);
+              alert('Blog oluşturma başarısız: ' + errorText);
+            }
+          }
+          break;
+
+        case 'ka1course':
+          // Collect daily program data from dynamic fields
+          const dailyProgramData: string[] = [];
+          const form = e?.target as HTMLFormElement;
+          const dayInputs = form.querySelectorAll('textarea[name^="day_"]');
+          dayInputs.forEach((input: any) => {
+            if (input.value.trim()) {
+              dailyProgramData.push(input.value.trim());
+            }
+          });
+
+          const courseData = {
+            title: data.title,
+            description: data.description,
+            fee: data.fee,
+            duration: `${data.duration} DAYS`,
+            startDate: data.startDate ? new Date(data.startDate + 'T00:00:00').toISOString() : new Date().toISOString(),
+            endDate: data.endDate ? new Date(data.endDate + 'T00:00:00').toISOString() : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+            location: data.location,
+            level: data.level,
+            maxParticipants: parseInt(data.maxParticipants),
+            currentParticipants: parseInt(data.currentParticipants) || 0,
+            isApproved: data.isApproved === 'true',
+            imageUrl: null,
+            learningOutcomes: data.learningOutcomes ? data.learningOutcomes.split('\n').filter((item: string) => item.trim()) : [],
+            dailyPrograms: dailyProgramData
+          };
+
+          if (editingItem) {
+            const updateData = {
+              id: editingItem.id,
+              title: courseData.title,
+              description: courseData.description,
+              fee: courseData.fee,
+              duration: courseData.duration,
+              startDate: courseData.startDate,
+              endDate: courseData.endDate,
+              location: courseData.location,
+              level: courseData.level,
+              maxParticipants: courseData.maxParticipants,
+              currentParticipants: courseData.currentParticipants,
+              isApproved: courseData.isApproved,
+              imageUrl: null,
+              learningOutcomes: courseData.learningOutcomes,
+              dailyPrograms: courseData.dailyPrograms
+            };
+            console.log('Updating course with data:', updateData);
+            console.log('StartDate type:', typeof updateData.startDate, 'Value:', updateData.startDate);
+            console.log('EndDate type:', typeof updateData.endDate, 'Value:', updateData.endDate);
+            
+            const response = await fetch(`https://localhost:7166/api/Courses/${editingItem.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(updateData)
+            });
+            
+            console.log('Update response status:', response.status);
+            
+            if (response.ok) {
+              const updatedCourse = await response.json();
+              console.log('Updated course:', updatedCourse);
+              setCourses(courses.map(course => course.id === editingItem.id ? updatedCourse : course));
+              setKa1Courses(ka1Courses.map(course => course.id === editingItem.id ? updatedCourse : course));
+              toast.success('Kurs başarıyla güncellendi!');
+              // Refresh data to ensure consistency
+              await fetchData();
+            } else {
+              const errorText = await response.text();
+              console.error('Update failed:', errorText);
+              console.error('Request data:', updateData);
+              toast.error('Kurs güncelleme başarısız: ' + errorText);
+            }
+          } else {
+            console.log('Creating course with data:', courseData);
+            const response = await fetch('https://localhost:7166/api/Courses', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(courseData)
+            });
+            
+            console.log('Create response status:', response.status);
+            
+            if (response.ok) {
+              const newCourse = await response.json();
+              console.log('Created course:', newCourse);
+              setCourses([...courses, newCourse]);
+              setKa1Courses([...ka1Courses, newCourse]);
+              toast.success('Kurs başarıyla oluşturuldu!');
+              // Refresh data to ensure consistency
+              await fetchData();
+            } else {
+              const errorText = await response.text();
+              console.error('Create failed:', errorText);
+              toast.error('Kurs oluşturma başarısız: ' + errorText);
+            }
+          }
+          break;
+        case 'ka2project':
+          const projectData = {
+            title: data.title,
+            description: data.description,
+            type: data.type,
+            location: data.location,
+            partnerCountries: data.partners,
+            objectives: data.objectives,
+            activities: data.activities ? data.activities.split('\n').filter((activity: string) => activity.trim()) : [],
+            targetGroup: data.targetGroup,
+            budget: data.projectValue,
+            isActive: true
+          };
+
+          if (editingItem) {
+            const updateData = { ...projectData, id: editingItem.id };
+            console.log('Updating KA2 project with data:', updateData);
+            
+            const response = await fetch(`https://localhost:7166/api/Ka2/${editingItem.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(updateData)
+            });
+            
+            console.log('KA2 update response status:', response.status);
+            
+            if (response.ok) {
+              const updatedProject = await response.json();
+              console.log('Updated KA2 project:', updatedProject);
+              setKa2Projects(ka2Projects.map(project => project.id === editingItem.id ? updatedProject : project));
+            } else {
+              const errorText = await response.text();
+              console.error('KA2 update failed:', errorText);
+              alert('KA2 update failed: ' + errorText);
+            }
+          } else {
+            const response = await fetch('https://localhost:7166/api/Ka2', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(projectData)
+            });
+            
+            console.log('KA2 create response status:', response.status);
+            
+            if (response.ok) {
+              const newProject = await response.json();
+              console.log('Created KA2 project:', newProject);
+              setKa2Projects([...ka2Projects, newProject]);
+            } else {
+              const errorText = await response.text();
+              console.error('KA2 create failed:', errorText);
+              alert('KA2 create failed: ' + errorText);
+            }
+          }
+          break;
+      }
+      
+      setShowModal(false);
+      setEditingItem(null);
+      setSelectedImages([]);
+      setImagePreviews([]);
+    } catch (error) {
+      console.error('Error saving data:', error);
+      alert('Error saving data. Please try again.');
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-900">Yükleniyor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
+              <p className="text-gray-900">EduExcellence Yönetim Paneli</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Çıkış Yap
+            </button>
+          </div>
+
+          {/* Navigation Tabs */}
+          <div className="flex space-x-8 border-t border-gray-200">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'dashboard'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('blogs')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'blogs'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              Blog & Haberler
+            </button>
+            <button
+              onClick={() => setActiveTab('ka1courses')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'ka1courses'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              KA1 Kursları
+            </button>
+            <button
+              onClick={() => setActiveTab('ka2projects')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'ka2projects'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              KA2 Projeleri
+            </button>
+            <button
+              onClick={() => router.push('/admin/social-media')}
+              className="py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300"
+            >
+              Sosyal Medya
+            </button>
+            <button
+              onClick={() => router.push('/admin/reviews')}
+              className="py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300"
+            >
+              Müşteri Yorumları
+            </button>
+            <button
+              onClick={() => setActiveTab('contact')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'contact'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              İletişim Bilgileri
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <div>
+            {/* Admin Settings */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+              <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-900">Admin Ayarları</h2>
+                <button
+                  onClick={() => setShowPasswordModal(true)}
+                  className="flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                  </svg>
+                  Şifre Değiştir
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Admin Kullanıcısı</h3>
+                    <p className="text-sm text-gray-600">admin@edu-excellence.com</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dashboard Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-900">Toplam Blog</p>
+                    <p className="text-2xl font-bold text-gray-900">{blogs.length}</p>
+                  </div>
+                </div>
+              </div>
+
+
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-900">KA1 Kursları</p>
+                    <p className="text-2xl font-bold text-gray-900">{ka1Courses.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-900">KA2 Projeleri</p>
+                    <p className="text-2xl font-bold text-gray-900">{ka2Projects.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-900">İletişim Bilgileri</p>
+                    <p className="text-2xl font-bold text-gray-900">3</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <div className="flex items-center">
+                  <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                    <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-900">Toplam İçerik</p>
+                    <p className="text-2xl font-bold text-gray-900">{blogs.length + ka1Courses.length + ka2Projects.length}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Dashboard Visualizations */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Onaylı/Onaysız Kurs Oranı */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Kurs Onay Durumu</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
+                      <span className="text-sm font-medium text-gray-900">Onaylı Kurslar</span>
+                    </div>
+                    <span className="text-lg font-bold text-green-600">
+                      {ka1Courses.filter(course => course.isApproved).length}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-gray-500 rounded-full mr-3"></div>
+                      <span className="text-sm font-medium text-gray-900">Devlet Onaylı Değil</span>
+                    </div>
+                    <span className="text-lg font-bold text-gray-900">
+                      {ka1Courses.filter(course => !course.isApproved).length}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+                    <div 
+                      className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${ka1Courses.length > 0 ? (ka1Courses.filter(course => course.isApproved).length / ka1Courses.length) * 100 : 0}%` 
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-900 text-center">
+                    %{ka1Courses.length > 0 ? Math.round((ka1Courses.filter(course => course.isApproved).length / ka1Courses.length) * 100) : 0} Onaylı
+                  </p>
+                </div>
+              </div>
+
+              {/* Yaklaşan Kurslar */}
+              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Yaklaşan Kurslar (2 Ay)</h3>
+                <div className="relative">
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <div className="flex space-x-4 pb-2" style={{ minWidth: 'max-content' }}>
+                      {(() => {
+                        const now = new Date();
+                        const twoMonthsFromNow = new Date();
+                        twoMonthsFromNow.setMonth(now.getMonth() + 2);
+                        
+                        const upcomingCourses = ka1Courses
+                          .filter(course => {
+                            if (!course.startDate) return false;
+                            const courseDate = new Date(course.startDate);
+                            return courseDate > now && courseDate <= twoMonthsFromNow;
+                          })
+                          .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+                        if (upcomingCourses.length === 0) {
+                          return (
+                            <p className="text-sm text-gray-900 text-center py-4 w-full">
+                              Gelecek 2 ay içinde kurs bulunmuyor
+                            </p>
+                          );
+                        }
+
+                        return upcomingCourses.map((course) => (
+                          <div key={course.id} className="flex-shrink-0 w-64 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="space-y-2">
+                              <h4 className="font-medium text-gray-900 text-sm line-clamp-2">{course.title}</h4>
+                              <div className="flex items-center text-xs text-gray-900">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                {course.location}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className="text-xs font-medium text-blue-600">
+                                  {new Date(course.startDate).toLocaleDateString('tr-TR', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                  })}
+                                </p>
+                                {course.isApproved && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Onaylı
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+                  
+                  {/* Scroll indicator */}
+                  <div className="absolute top-0 right-0 w-8 h-full bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Son Eklenen İçerikler */}
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Son Eklenen İçerikler</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Son Blog/Haberler */}
+                <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                      </svg>
+                    </div>
+                    <span className="font-medium text-gray-900">Blog/Haberler</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-600">{blogs.length}</p>
+                  <p className="text-xs text-gray-900">Toplam içerik</p>
+                </div>
+
+                {/* Son KA1 Kursları */}
+                <div className="p-4 bg-purple-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                    </div>
+                    <span className="font-medium text-gray-900">KA1 Kursları</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">{ka1Courses.length}</p>
+                  <p className="text-xs text-gray-900">Toplam kurs</p>
+                </div>
+
+                {/* Son KA2 Projeleri */}
+                <div className="p-4 bg-orange-50 rounded-lg">
+                  <div className="flex items-center mb-2">
+                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                    </div>
+                    <span className="font-medium text-gray-900">KA2 Projeleri</span>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-600">{ka2Projects.length}</p>
+                  <p className="text-xs text-gray-900">Toplam proje</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Popüler Lokasyonlar */}
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Popüler Kurs Lokasyonları</h3>
+              <div className="space-y-3">
+                {Object.entries(
+                  ka1Courses.reduce((acc, course) => {
+                    acc[course.location] = (acc[course.location] || 0) + 1;
+                    return acc;
+                  }, {} as Record<string, number>)
+                )
+                  .sort(([,a], [,b]) => (b as number) - (a as number))
+                  .slice(0, 5)
+                  .map(([location, count]) => (
+                    <div key={location} className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                          <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </div>
+                        <span className="font-medium text-gray-900">{location}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-3">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                            style={{ 
+                              width: `${((count as number) / Math.max(...Object.values(ka1Courses.reduce((acc, course) => {
+                                acc[course.location] = (acc[course.location] || 0) + 1;
+                                return acc;
+                              }, {} as Record<string, number>)).map(v => v as number))) * 100}%` 
+                            }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-bold text-gray-900">{count as number}</span>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Blog & Haberler Tab */}
+        {activeTab === 'blogs' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">Blog & Haberler Yönetimi</h2>
+              <button
+                onClick={() => handleAdd('blog')}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Yeni Ekle
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {blogs.map((blog) => (
+                  <div key={blog.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">{blog.title}</h3>
+                      <p className="text-sm text-gray-900 mt-1">{blog.excerpt}</p>
+                      <div className="flex items-center mt-2 space-x-4">
+                        <span className="text-xs text-gray-900 font-medium">
+                          {new Date(blog.publishedAt).toLocaleDateString('tr-TR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                          })}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          blog.type === 'news' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {blog.type === 'news' ? 'Haber' : 'Etkinlik'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit('blog', blog)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                        title="Düzenle"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDelete('blog', blog.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        title="Sil"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+
+        {/* KA1 Kursları Tab */}
+        {activeTab === 'ka1courses' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">KA1 Kursları Yönetimi</h2>
+              <button
+                onClick={() => handleAdd('ka1course')}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Yeni Ekle
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {ka1Courses.map((course) => (
+                  <div key={course.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="font-medium text-gray-900">{course.title}</h3>
+                        {course.isApproved && (
+                          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                            Onaylı
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-900 mt-1">{course.description}</p>
+                      <div className="flex items-center mt-2 space-x-4">
+                        <span className="text-sm text-gray-900 font-medium">📍 {course.location}</span>
+                        <span className="text-sm text-gray-900 font-medium">⏱️ {course.duration}</span>
+                        <span className="text-sm text-gray-900 font-medium">💰 {course.fee}</span>
+                        <span className="text-sm text-gray-900 font-medium">👥 {course.currentParticipants}/{course.maxParticipants}</span>
+                        <span className="text-sm text-gray-900 font-medium">📊 {course.level}</span>
+                        {course.startDate && (
+                          <span className="text-sm text-gray-900 font-medium">📅 {new Date(course.startDate).toLocaleDateString('tr-TR', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                          })}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit('ka1course', course)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => handleDelete('ka1course', course.id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* KA2 Projeleri Tab */}
+        {activeTab === 'ka2projects' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">KA2 Projeleri Yönetimi</h2>
+              <button
+                onClick={() => handleAdd('ka2project')}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Yeni Ekle
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-6">
+                {ka2Projects.map((project) => (
+                  <div key={project.id} className="border border-gray-200 rounded-lg p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            project.type === 'KA210-VET' 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {project.type}
+                          </span>
+                        </div>
+                        <p className="text-gray-900 mb-3">{project.description}</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-semibold text-gray-800">Partners:</span>
+                            <span className="text-gray-900 ml-2 font-medium">{project.partners}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-800">Project Value:</span>
+                            <span className="text-gray-900 ml-2 font-medium">{project.projectValue}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex space-x-2 ml-4">
+                        <button
+                          onClick={() => handleEdit('ka2project', project)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                          title="Düzenle"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleDelete('ka2project', project.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                          title="Sil"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-2">Project Activities</h4>
+                        <ul className="space-y-1">
+                          {project.activities.map((activity: string, index: number) => (
+                            <li key={index} className="text-sm text-gray-900 flex items-center font-medium">
+                              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                              {activity}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/5 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {modalType === 'blog' ? 'Blog/Haber' : 
+                 modalType === 'ka1course' ? 'KA1 Kursu' : 
+                 modalType === 'ka2project' ? 'KA2 Projesi' : ''} 
+                {editingItem ? 'Düzenle' : 'Ekle'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingItem(null);
+                  setSelectedImages([]);
+                  setImagePreviews([]);
+                  // Refresh data when modal is closed
+                  fetchData();
+                }}
+                className="text-gray-900 hover:text-gray-900"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-6">
+              <form key={formKey} onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                const data = Object.fromEntries(formData.entries());
+                handleSave(modalType, data, e);
+              }}>
+                {modalType === 'blog' && (
+                  <>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Başlık</label>
+                      <input
+                        type="text"
+                        name="title"
+                        defaultValue={editingItem?.title || ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Kısa Açıklama</label>
+                      <textarea
+                        name="content"
+                        defaultValue={editingItem?.excerpt || editingItem?.content || ''}
+                        rows={3}
+                        placeholder="Haberin kısa özeti..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Detaylı İçerik</label>
+                      <textarea
+                        name="fullContent"
+                        defaultValue={editingItem?.fullContent || ''}
+                        rows={8}
+                        placeholder="Haberin detaylı içeriği (HTML formatında yazabilirsiniz)..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Resimler</label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                        <input
+                          type="file"
+                          name="images"
+                          multiple
+                          accept="image/*"
+                          className="hidden"
+                          id="imageUpload"
+                          onChange={handleImageSelect}
+                        />
+                        <label htmlFor="imageUpload" className="cursor-pointer">
+                          <div className="flex flex-col items-center">
+                            <svg className="w-12 h-12 text-gray-900 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p className="text-sm font-medium text-gray-900 mb-1">Resimleri seçmek için tıklayın</p>
+                            <p className="text-xs text-gray-900">JPG, PNG, GIF formatları desteklenir</p>
+                            <p className="text-xs text-blue-600 mt-2">Birden fazla resim seçebilirsiniz</p>
+                          </div>
+                        </label>
+                      </div>
+                      <div className="mt-3 flex justify-between items-center">
+                        <p className="text-xs text-gray-900">
+                          💡 <strong>İpucu:</strong> Haber için en az 3-4 resim eklemeniz önerilir. 
+                          İlk resim ana görsel olarak kullanılır.
+                        </p>
+                        {imagePreviews.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // Revoke all preview URLs to free memory
+                              imagePreviews.forEach(url => URL.revokeObjectURL(url));
+                              setSelectedImages([]);
+                              setImagePreviews([]);
+                            }}
+                            className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                          >
+                            Tümünü Temizle
+                          </button>
+                        )}
+                      </div>
+                      
+                      {/* Image Previews */}
+                      {(imagePreviews.length > 0 || (editingItem?.images && editingItem.images.length > 0)) && (
+                        <div className="mt-4">
+                          <h4 className="text-sm font-medium text-gray-900 mb-3">
+                            {editingItem?.images && editingItem.images.length > 0 ? 'Mevcut Resimler' : 'Seçilen Resimler'} 
+                            ({editingItem?.images ? editingItem.images.length : imagePreviews.length})
+                          </h4>
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {/* Mevcut resimler */}
+                            {editingItem?.images && editingItem.images.map((image: string, index: number) => (
+                              <div key={`existing-${index}`} className="relative group">
+                                <img
+                                  src={image}
+                                  alt={`Mevcut resim ${index + 1}`}
+                                  className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                />
+                                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
+                                  Mevcut Resim {index + 1}
+                                </div>
+                              </div>
+                            ))}
+                            {/* Yeni seçilen resimler */}
+                            {imagePreviews.map((preview, index) => (
+                              <div key={index} className="relative group">
+                                <img
+                                  src={preview}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(index)}
+                                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                                >
+                                  ×
+                                </button>
+                                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
+                                  {selectedImages[index]?.name || `Resim ${index + 1}`}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Tür</label>
+                      <select
+                        name="type"
+                        defaultValue={editingItem?.type || 'news'}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                      >
+                        <option value="news">Haber</option>
+                        <option value="event">Etkinlik</option>
+                      </select>
+                    </div>
+                  </>
+                )}
+
+
+                {modalType === 'ka1course' && (
+                  <>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Kurs Adı</label>
+                      <input
+                        type="text"
+                        name="title"
+                        defaultValue={editingItem?.title || ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Lokasyon</label>
+                      <input
+                        type="text"
+                        name="location"
+                        defaultValue={editingItem?.location || ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Açıklama</label>
+                      <textarea
+                        name="description"
+                        defaultValue={editingItem?.description || ''}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Seviye</label>
+                      <select
+                        name="level"
+                        defaultValue={editingItem?.level || ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      >
+                        <option value="">Seviye Seçin</option>
+                        <option value="Beginner">Beginner</option>
+                        <option value="Intermediate">Intermediate</option>
+                        <option value="Advanced">Advanced</option>
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Süre</label>
+                        <input
+                          type="number"
+                          name="duration"
+                          id="courseDuration"
+                          defaultValue={editingItem?.duration ? editingItem.duration.replace(' DAYS', '') : ''}
+                          placeholder="5"
+                          min="1"
+                          max="30"
+                          onChange={() => (window as any).updateDailyProgramFromDuration()}
+                          onBlur={() => (window as any).updateDailyProgramFromDuration()}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Enter number of days (e.g.: 5). Daily program fields will be automatically generated.</p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Ücret</label>
+                        <input
+                          type="text"
+                          name="fee"
+                          defaultValue={editingItem?.fee || ''}
+                          placeholder="80 EURO PER DAY"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Maksimum Katılımcı</label>
+                        <input
+                          type="number"
+                          name="maxParticipants"
+                          defaultValue={editingItem?.maxParticipants || ''}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Mevcut Katılımcı</label>
+                        <input
+                          type="number"
+                          name="currentParticipants"
+                          defaultValue={editingItem?.currentParticipants || ''}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Start Date</label>
+                        <input
+                          type="date"
+                          name="startDate"
+                          defaultValue={editingItem?.startDate ? editingItem.startDate.split('T')[0] : ''}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">End Date</label>
+                        <input
+                          type="date"
+                          name="endDate"
+                          defaultValue={editingItem?.endDate ? editingItem.endDate.split('T')[0] : ''}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Onay Durumu</label>
+                      <select
+                        name="isApproved"
+                        defaultValue={editingItem?.isApproved ? 'true' : 'false'}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      >
+                        <option value="true">Onaylı (Devlet Onaylı)</option>
+                        <option value="false">Onaylı Değil</option>
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <div id="dailyProgramContainer">
+                        {/* Dynamic daily program fields will be inserted here */}
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {modalType === 'ka2project' && (
+                  <>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Proje Başlığı</label>
+                      <input
+                        type="text"
+                        name="title"
+                        defaultValue={editingItem?.title || ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Proje Türü</label>
+                      <select
+                        name="type"
+                        defaultValue={editingItem?.type || ''}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      >
+                        <option value="">Tür Seçin</option>
+                        <optgroup label="KA210 - Small-scale Partnerships">
+                          <option value="KA210-VET">KA210-VET (VET)</option>
+                          <option value="KA210-YOU">KA210-YOU (Youth)</option>
+                          <option value="KA210-HED">KA210-HED (Higher Education)</option>
+                          <option value="KA210-ADU">KA210-ADU (Adult Education)</option>
+                          <option value="KA210-SCH">KA210-SCH (School)</option>
+                        </optgroup>
+                        <optgroup label="KA220 - Large-scale Partnerships">
+                          <option value="KA220-VET">KA220-VET (VET)</option>
+                          <option value="KA220-YOU">KA220-YOU (Youth)</option>
+                          <option value="KA220-HED">KA220-HED (Higher Education)</option>
+                          <option value="KA220-ADU">KA220-ADU (Adult Education)</option>
+                          <option value="KA220-SCH">KA220-SCH (School)</option>
+                        </optgroup>
+                      </select>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Açıklama</label>
+                      <textarea
+                        name="description"
+                        defaultValue={editingItem?.description || ''}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Lokasyon</label>
+                      <input
+                        type="text"
+                        name="location"
+                        defaultValue={editingItem?.location || ''}
+                        placeholder="Multiple Countries"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Hedef Grup</label>
+                      <input
+                        type="text"
+                        name="targetGroup"
+                        defaultValue={editingItem?.targetGroup || ''}
+                        placeholder="VET students and teachers"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Partnerler</label>
+                        <input
+                          type="text"
+                          name="partners"
+                          defaultValue={editingItem?.partnerCountries || ''}
+                          placeholder="Germany, Greece, Turkiye"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Proje Değeri</label>
+                        <input
+                          type="text"
+                          name="projectValue"
+                          defaultValue={editingItem?.budget || ''}
+                          placeholder="60.000 Euro"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Proje Hedefleri</label>
+                      <textarea
+                        name="objectives"
+                        defaultValue={editingItem?.objectives || ''}
+                        rows={3}
+                        placeholder="To improve VET quality and enhance employability skills"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Proje Aktiviteleri (Her satıra bir aktivite)</label>
+                      <textarea
+                        name="activities"
+                        defaultValue={editingItem?.activities?.join('\n') || ''}
+                        rows={4}
+                        placeholder="Local Training Workshops&#10;International Training Workshop&#10;Online Platform Development"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setEditingItem(null);
+                      setSelectedImages([]);
+                      setImagePreviews([]);
+                      setFormKey(prev => prev + 1); // Form'u reset et
+                      // Refresh data when modal is closed
+                      fetchData();
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-900 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors duration-200"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    {editingItem ? 'Güncelle' : 'Ekle'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* İletişim Bilgileri Tab */}
+      {activeTab === 'contact' && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">İletişim Bilgileri Yönetimi</h2>
+            <p className="text-sm text-gray-600 mt-1">Anasayfadaki footer'da görünen iletişim bilgilerini düzenleyin</p>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Adres Bilgileri */}
+            <div className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm border border-blue-200 p-6 hover:shadow-md transition-all duration-200">
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="absolute top-4 right-4 p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">{contactInfo.address.title}</h3>
+              </div>
+              <div className="space-y-2">
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(contactInfo.address.details || '[]');
+                    return Array.isArray(parsed) ? parsed : [];
+                  } catch {
+                    return [];
+                  }
+                })().map((detail: string, index: number) => (
+                  <p key={index} className="text-gray-700 font-medium text-sm leading-relaxed flex items-start">
+                    <span className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 mr-2 flex-shrink-0"></span>
+                    {detail}
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            {/* Telefon Bilgileri */}
+            <div className="group relative bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-sm border border-green-200 p-6 hover:shadow-md transition-all duration-200">
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="absolute top-4 right-4 p-2 text-green-600 hover:text-green-700 hover:bg-green-100 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">{contactInfo.phone.title}</h3>
+              </div>
+              <div className="space-y-2">
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(contactInfo.phone.details || '[]');
+                    return Array.isArray(parsed) ? parsed : [];
+                  } catch {
+                    return [];
+                  }
+                })().map((detail: string, index: number) => (
+                  <p key={index} className="text-gray-700 font-medium text-sm leading-relaxed flex items-center">
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-2 flex-shrink-0"></span>
+                    <a href={`tel:${detail}`} className="hover:text-green-600 transition-colors">{detail}</a>
+                  </p>
+                ))}
+              </div>
+            </div>
+
+            {/* E-posta Bilgileri */}
+            <div className="group relative bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-sm border border-purple-200 p-6 hover:shadow-md transition-all duration-200">
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="absolute top-4 right-4 p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded-lg transition-colors duration-200 opacity-0 group-hover:opacity-100"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+              </button>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">{contactInfo.email.title}</h3>
+              </div>
+              <div className="space-y-2">
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(contactInfo.email.details || '[]');
+                    return Array.isArray(parsed) ? parsed : [];
+                  } catch {
+                    return [];
+                  }
+                })().map((detail: string, index: number) => (
+                  <p key={index} className="text-gray-700 font-medium text-sm leading-relaxed flex items-center">
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-2 flex-shrink-0"></span>
+                    <a href={`mailto:${detail}`} className="hover:text-purple-600 transition-colors">{detail}</a>
+                  </p>
+                ))}
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* İletişim Bilgileri Modal */}
+      {showContactModal && (
+      <div className="fixed inset-0 bg-black/5 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          {/* Header */}
+          <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 rounded-t-2xl">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">İletişim Bilgilerini Düzenle</h3>
+                <p className="text-gray-600 mt-1">Şirket iletişim bilgilerini güncelleyin</p>
+              </div>
+              <button
+                onClick={() => setShowContactModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white rounded-lg"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          {/* Content */}
+          <div className="p-8">
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target as HTMLFormElement);
+              const data = Object.fromEntries(formData.entries());
+              await handleContactSave(data);
+            }}>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Adres Bilgileri */}
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">Adres Bilgileri</h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Başlık</label>
+                      <input
+                        type="text"
+                        name="addressTitle"
+                        defaultValue={contactInfo.address.title}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Adres Detayları</label>
+                      <textarea
+                        name="addressDetails"
+                        defaultValue={(() => {
+                          try {
+                            const parsed = JSON.parse(contactInfo.address.details || '[]');
+                            return Array.isArray(parsed) ? parsed.join('\n') : '';
+                          } catch {
+                            return '';
+                          }
+                        })()}
+                        rows={4}
+                        placeholder="Her satıra bir adres satırı yazın..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white resize-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Telefon Bilgileri */}
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">Telefon Bilgileri</h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Başlık</label>
+                      <input
+                        type="text"
+                        name="phoneTitle"
+                        defaultValue={contactInfo.phone.title}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Telefon Numaraları</label>
+                      <textarea
+                        name="phoneDetails"
+                        defaultValue={(() => {
+                          try {
+                            const parsed = JSON.parse(contactInfo.phone.details || '[]');
+                            return Array.isArray(parsed) ? parsed.join('\n') : '';
+                          } catch {
+                            return '';
+                          }
+                        })()}
+                        rows={4}
+                        placeholder="Her satıra bir telefon numarası yazın..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white resize-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* E-posta Bilgileri */}
+                <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                  <div className="flex items-center mb-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-3">
+                      <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-semibold text-gray-900">E-posta Bilgileri</h4>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Başlık</label>
+                      <input
+                        type="text"
+                        name="emailTitle"
+                        defaultValue={contactInfo.email.title}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">E-posta Adresleri</label>
+                      <textarea
+                        name="emailDetails"
+                        defaultValue={(() => {
+                          try {
+                            const parsed = JSON.parse(contactInfo.email.details || '[]');
+                            return Array.isArray(parsed) ? parsed.join('\n') : '';
+                          } catch {
+                            return '';
+                          }
+                        })()}
+                        rows={4}
+                        placeholder="Her satıra bir e-posta adresi yazın..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white resize-none"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-8 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowContactModal(false)}
+                  disabled={isContactSaving}
+                  className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isContactSaving}
+                  className="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="flex items-center">
+                    {isContactSaving ? (
+                      <svg className="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {isContactSaving ? 'Güncelleniyor...' : 'Güncelle'}
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      )}
+
+      {/* Şifre Değiştirme Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 bg-black/5 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-orange-50 rounded-t-2xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Şifre Değiştir</h3>
+                  <p className="text-gray-600 mt-1">Güvenliğiniz için şifrenizi güncelleyin</p>
+                </div>
+                <button
+                  onClick={() => setShowPasswordModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-white rounded-lg"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Content */}
+            <div className="p-6">
+              <form onSubmit={handlePasswordChange}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mevcut Şifre</label>
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      placeholder="Mevcut şifrenizi girin"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Yeni Şifre</label>
+                    <input
+                      type="password"
+                      name="newPassword"
+                      placeholder="Yeni şifrenizi girin"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white"
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      En az 8 karakter, 1 büyük harf, 1 küçük harf, 1 rakam ve 1 özel karakter içermelidir
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Yeni Şifre (Tekrar)</label>
+                    <input
+                      type="password"
+                      name="confirmPassword"
+                      placeholder="Yeni şifrenizi tekrar girin"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent placeholder-gray-500 text-gray-900 bg-white"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordModal(false)}
+                    className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-3 text-sm font-medium text-white bg-gradient-to-r from-red-600 to-orange-600 rounded-lg hover:from-red-700 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    <span className="flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1721 9z" />
+                      </svg>
+                      Şifre Değiştir
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
