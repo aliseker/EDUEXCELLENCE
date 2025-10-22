@@ -1,0 +1,395 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import apiService from '@/services/api';
+
+interface HeroItem {
+  id: number;
+  text: string;
+  heroId: number;
+}
+
+interface Hero {
+  id: number;
+  title: string;
+  description?: string;
+  items: HeroItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateHeroItem {
+  text: string;
+}
+
+interface UpdateHeroItem {
+  id: number;
+  text: string;
+}
+
+export default function HeroManagement() {
+  const [heroes, setHeroes] = useState<Hero[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingHero, setEditingHero] = useState<Hero | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    items: [] as CreateHeroItem[]
+  });
+  const [editingFormData, setEditingFormData] = useState({
+    id: 0,
+    title: '',
+    description: '',
+    items: [] as UpdateHeroItem[]
+  });
+
+  useEffect(() => {
+    fetchHeroes();
+  }, []);
+
+  const fetchHeroes = async () => {
+    try {
+      const data = await apiService.getHeroes();
+      setHeroes(data);
+    } catch (error) {
+      console.error('Error fetching heroes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateHero = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await apiService.createHero(formData);
+      setFormData({ title: '', description: '', items: [] });
+      setIsCreating(false);
+      fetchHeroes();
+    } catch (error) {
+      console.error('Error creating hero:', error);
+    }
+  };
+
+  const handleUpdateHero = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await apiService.updateHero(editingHero!.id, editingFormData);
+      setEditingHero(null);
+      fetchHeroes();
+    } catch (error) {
+      console.error('Error updating hero:', error);
+    }
+  };
+
+  const handleDeleteHero = async (id: number) => {
+    if (confirm('Bu hero\'yu silmek istediğinizden emin misiniz?')) {
+      try {
+        await apiService.deleteHero(id);
+        fetchHeroes();
+      } catch (error) {
+        console.error('Error deleting hero:', error);
+      }
+    }
+  };
+
+  const handleSetActive = async (id: number) => {
+    try {
+      await apiService.setActiveHero(id);
+      fetchHeroes();
+    } catch (error) {
+      console.error('Error setting active hero:', error);
+    }
+  };
+
+  const addItem = (isEditing: boolean = false) => {
+    if (isEditing) {
+      setEditingFormData(prev => ({
+        ...prev,
+        items: [...prev.items, { id: 0, text: '' }]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        items: [...prev.items, { text: '' }]
+      }));
+    }
+  };
+
+  const removeItem = (index: number, isEditing: boolean = false) => {
+    if (isEditing) {
+      setEditingFormData(prev => ({
+        ...prev,
+        items: prev.items.filter((_, i) => i !== index)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        items: prev.items.filter((_, i) => i !== index)
+      }));
+    }
+  };
+
+  const updateItem = (index: number, text: string, isEditing: boolean = false) => {
+    if (isEditing) {
+      setEditingFormData(prev => ({
+        ...prev,
+        items: prev.items.map((item, i) => i === index ? { ...item, text } : item)
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        items: prev.items.map((item, i) => i === index ? { ...item, text } : item)
+      }));
+    }
+  };
+
+  const startEdit = (hero: Hero) => {
+    setEditingHero(hero);
+    setEditingFormData({
+      id: hero.id,
+      title: hero.title,
+      description: hero.description || '',
+      items: hero.items.map(item => ({ id: item.id, text: item.text }))
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="animate-pulse">
+            <div className="h-8 bg-gray-300 rounded mb-6"></div>
+            <div className="h-64 bg-gray-300 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Hero Yönetimi</h1>
+          <p className="text-gray-600">Ana sayfa hero bölümünü yönetin</p>
+        </div>
+
+        {/* Create New Hero */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-900">Yeni Hero Oluştur</h2>
+            <button
+              onClick={() => setIsCreating(!isCreating)}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              {isCreating ? 'İptal' : 'Yeni Hero'}
+            </button>
+          </div>
+
+          {isCreating && (
+            <form onSubmit={handleCreateHero} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Başlık *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  placeholder="Örn: Discover the World with Erasmus"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Açıklama
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  rows={3}
+                  placeholder="Hero açıklaması (opsiyonel)"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Madde Madde İçerik
+                </label>
+                {formData.items.map((item, index) => (
+                  <div key={index} className="flex gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={item.text}
+                      onChange={(e) => updateItem(index, e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                      placeholder="Örn: 500+ Graduates"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                    >
+                      Sil
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => addItem()}
+                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Madde Ekle
+                </button>
+              </div>
+
+              <button
+                type="submit"
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Hero Oluştur
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Heroes List */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Mevcut Hero'lar</h2>
+          
+          {heroes.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Henüz hero oluşturulmamış</p>
+          ) : (
+            <div className="space-y-4">
+              {heroes.map((hero) => (
+                <div key={hero.id} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{hero.title}</h3>
+                      {hero.description && (
+                        <p className="text-gray-600 mt-1">{hero.description}</p>
+                      )}
+                      <div className="flex gap-2 mt-2">
+                        {hero.items.map((item, index) => (
+                          <span key={item.id} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                            {item.text}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSetActive(hero.id)}
+                        className="bg-green-500 text-white px-3 py-1 rounded text-sm hover:bg-green-600 transition-colors"
+                      >
+                        Aktif Yap
+                      </button>
+                      <button
+                        onClick={() => startEdit(hero)}
+                        className="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600 transition-colors"
+                      >
+                        Düzenle
+                      </button>
+                      <button
+                        onClick={() => handleDeleteHero(hero.id)}
+                        className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600 transition-colors"
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Edit Modal */}
+        {editingHero && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Hero Düzenle</h2>
+              
+              <form onSubmit={handleUpdateHero} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Başlık *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingFormData.title}
+                    onChange={(e) => setEditingFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Açıklama
+                  </label>
+                  <textarea
+                    value={editingFormData.description}
+                    onChange={(e) => setEditingFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    rows={3}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Madde Madde İçerik
+                  </label>
+                  {editingFormData.items.map((item, index) => (
+                    <div key={index} className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={item.text}
+                        onChange={(e) => updateItem(index, e.target.value, true)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeItem(index, true)}
+                        className="bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => addItem(true)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    Madde Ekle
+                  </button>
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <button
+                    type="submit"
+                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Güncelle
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingHero(null)}
+                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  >
+                    İptal
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

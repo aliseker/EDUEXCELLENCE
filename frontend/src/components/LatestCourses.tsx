@@ -21,6 +21,7 @@ interface Course {
   image?: string;
   learningOutcomes: string[];
   dailyProgram: string[];
+  createdAt?: string;
 }
 
 interface FilterState {
@@ -41,44 +42,6 @@ const LatestCourses = () => {
     approved: 'all'
   });
 
-  // Fetch courses from API
-  const fetchCourses = async () => {
-    try {
-      const response = await fetch('https://localhost:7166/api/Courses');
-      if (response.ok) {
-        const apiCourses = await response.json();
-        // Convert API data to component format
-        const convertedCourses = apiCourses.map((course: any) => ({
-          id: course.id,
-          title: course.title,
-          description: course.description,
-          fee: course.fee,
-          duration: course.duration,
-          startDate: course.startDate,
-          endDate: course.endDate,
-          location: course.location,
-          category: course.category,
-          level: course.level,
-          maxParticipants: course.maxParticipants,
-          currentParticipants: course.currentParticipants,
-          isApproved: course.isApproved,
-          learningOutcomes: course.learningOutcomes || [],
-          dailyProgram: course.dailyPrograms || []
-        }));
-        
-        setCourses(convertedCourses);
-      } else {
-        console.error('Failed to fetch courses');
-      }
-    } catch (error) {
-      console.error('Error fetching courses:', error);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchCourses();
-  }, []);
 
   // Sample data - fallback if API fails
   const sampleCourses: Course[] = [
@@ -266,9 +229,17 @@ const LatestCourses = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/Courses/approved');
+        const response = await fetch('https://localhost:7166/api/Courses');
         if (response.ok) {
           const apiCourses = await response.json();
+          
+          // Tarihe göre en yeniden en eskiye sırala
+          apiCourses.sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt).getTime();
+            const dateB = new Date(b.createdAt).getTime();
+            return dateB - dateA;
+          });
+          
           // Convert API data to component format
           const convertedCourses = apiCourses.map((course: any) => ({
             id: course.id,
@@ -285,7 +256,8 @@ const LatestCourses = () => {
             currentParticipants: course.currentParticipants,
             isApproved: course.isApproved,
             learningOutcomes: course.learningOutcomes || [],
-            dailyProgram: course.dailyPrograms || []
+            dailyProgram: course.dailyPrograms || [],
+            createdAt: course.createdAt
           }));
           
         console.log('API Courses count:', convertedCourses.length);
@@ -311,25 +283,58 @@ const LatestCourses = () => {
     fetchCourses();
   }, []);
 
-  // Get unique locations from courses (case insensitive)
+  // Get courses that are not past (based on end date)
+  const getNotPastCourses = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return courses.filter(course => {
+      // If no end date, keep it
+      if (!course.endDate) return true;
+      
+      // Check if end date is today or in the future
+      const courseEndDate = new Date(course.endDate);
+      courseEndDate.setHours(0, 0, 0, 0);
+      
+      return courseEndDate >= today;
+    });
+  };
+
+  // Get unique locations from not-past courses (case insensitive)
   const getUniqueLocations = () => {
-    const locations = courses.map(course => course.location).filter(location => location);
+    const notPastCourses = getNotPastCourses();
+    const locations = notPastCourses.map(course => course.location).filter(location => location);
     const uniqueLocations = [...new Set(locations.map(location => location.toLowerCase()))];
     return uniqueLocations.map(location => 
       locations.find(orig => orig.toLowerCase() === location) || location
     ).sort();
   };
 
-  // Get unique levels from courses
+  // Get unique levels from not-past courses
   const getUniqueLevels = () => {
-    const levels = courses.map(course => course.level).filter(level => level);
+    const notPastCourses = getNotPastCourses();
+    const levels = notPastCourses.map(course => course.level).filter(level => level);
     return [...new Set(levels)].sort();
   };
 
   const handleFilterChange = (newFilters: any, coursesToFilter?: Course[]) => {
     setFilters(newFilters);
     const coursesToUse = coursesToFilter || courses;
-    let filtered = [...coursesToUse];
+    
+    // First, filter out courses with past end dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let filtered = coursesToUse.filter(course => {
+      // If no end date, keep it
+      if (!course.endDate) return true;
+      
+      // Check if end date is today or in the future
+      const courseEndDate = new Date(course.endDate);
+      courseEndDate.setHours(0, 0, 0, 0);
+      
+      return courseEndDate >= today;
+    });
 
     // Search filter
     if (newFilters.search) {
@@ -359,14 +364,6 @@ const LatestCourses = () => {
         filtered = filtered.filter(course => !course.isApproved);
       }
     }
-
-    // Sort by newest (handle null dates)
-    filtered.sort((a, b) => {
-      if (!a.startDate && !b.startDate) return 0;
-      if (!a.startDate) return 1;
-      if (!b.startDate) return -1;
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
-    });
 
     console.log('Filtered courses count:', filtered.length);
     setFilteredCourses(filtered);

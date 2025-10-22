@@ -22,39 +22,39 @@ namespace EduExcellence.Application.DTOs.Ka2
 
     public class CreateKa2ProjectDto
     {
-        [Required]
-        [MaxLength(500)]
+        [Required(ErrorMessage = "Title is required.")]
+        [MaxLength(500, ErrorMessage = "Title cannot exceed 500 characters.")]
         public string Title { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(2000)]
+        [Required(ErrorMessage = "Description is required.")]
+        [MaxLength(2000, ErrorMessage = "Description cannot exceed 2000 characters.")]
         public string Description { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
+        [Required(ErrorMessage = "Type is required.")]
+        [MaxLength(100, ErrorMessage = "Type cannot exceed 100 characters.")]
         public string Type { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
+        [Required(ErrorMessage = "Location is required.")]
+        [MaxLength(100, ErrorMessage = "Location cannot exceed 100 characters.")]
         public string Location { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(500)]
+        [Required(ErrorMessage = "Partner countries is required.")]
+        [MaxLength(500, ErrorMessage = "Partner countries cannot exceed 500 characters.")]
         public string PartnerCountries { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(1000)]
+        [Required(ErrorMessage = "Objectives is required.")]
+        [MaxLength(1000, ErrorMessage = "Objectives cannot exceed 1000 characters.")]
         public string Objectives { get; set; } = string.Empty;
 
         public List<string> Activities { get; set; } = new();
         public List<string> Results { get; set; } = new();
 
-        [Required]
-        [MaxLength(200)]
+        [Required(ErrorMessage = "Target group is required.")]
+        [MaxLength(200, ErrorMessage = "Target group cannot exceed 200 characters.")]
         public string TargetGroup { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(100)]
+        [Required(ErrorMessage = "Budget is required.")]
+        [MaxLength(100, ErrorMessage = "Budget cannot exceed 100 characters.")]
         public string Budget { get; set; } = string.Empty;
 
         public bool IsActive { get; set; } = true;
@@ -62,7 +62,7 @@ namespace EduExcellence.Application.DTOs.Ka2
 
     public class UpdateKa2ProjectDto : CreateKa2ProjectDto
     {
-        [Required]
+        [Required(ErrorMessage = "Id is required.")]
         public int Id { get; set; }
     }
 }

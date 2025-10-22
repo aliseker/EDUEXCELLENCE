@@ -23,8 +23,11 @@ namespace EduExcellence.Infrastructure.Persistence.Repositories
             CourseDailyPrograms = new Repository<CourseDailyProgram>(_context);
             BlogImages = new Repository<BlogImage>(_context);
             Ka2Projects = new Repository<Ka2Project>(_context);
-                   SocialMediaRepository = new Repository<SocialMedia>(_context);
-                   ReviewRepository = new Repository<Review>(_context);
+            SocialMediaRepository = new Repository<SocialMedia>(_context);
+            ReviewRepository = new Repository<Review>(_context);
+            HeroRepository = new HeroRepository(_context);
+            HeroItemRepository = new HeroItemRepository(_context);
+            Meetings = new MeetingRepository(_context);
         }
 
         public IRepository<Admin> Admins { get; }
@@ -38,6 +41,9 @@ namespace EduExcellence.Infrastructure.Persistence.Repositories
         public IRepository<Ka2Project> Ka2Projects { get; }
         public IRepository<SocialMedia> SocialMediaRepository { get; }
         public IRepository<Review> ReviewRepository { get; }
+        public IHeroRepository HeroRepository { get; }
+        public IHeroItemRepository HeroItemRepository { get; }
+        public IMeetingRepository Meetings { get; }
 
         public async Task<int> SaveChangesAsync()
         {

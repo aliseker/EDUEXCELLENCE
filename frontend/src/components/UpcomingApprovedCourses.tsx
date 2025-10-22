@@ -49,23 +49,28 @@ const UpcomingApprovedCourses = () => {
     fetchCourses();
   }, []);
 
-  // Get all approved courses (no date filtering)
-  const upcomingCourses = courses.filter(course => course.isApproved);
+  // Get all approved courses with start dates in the future (upcoming)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+  
+  const upcomingCourses = courses.filter(course => {
+    // Must be approved (double check even though API should only return approved)
+    if (course.isApproved !== true) return false;
+    
+    // Must have a start date
+    if (!course.startDate) return false;
+    
+    // Start date must be in the future (not started yet)
+    const courseStartDate = new Date(course.startDate);
+    courseStartDate.setHours(0, 0, 0, 0);
+    
+    return courseStartDate >= today;
+  });
 
   // Group courses by month
   const coursesByMonth: { [key: string]: Course[] } = {};
   upcomingCourses.forEach(course => {
-    if (!course.startDate) {
-      // Put courses without dates in "Tarih Belirtilmemiş" group
-      const monthKey = 'Tarih Belirtilmemiş';
-      if (!coursesByMonth[monthKey]) {
-        coursesByMonth[monthKey] = [];
-      }
-      coursesByMonth[monthKey].push(course);
-      return;
-    }
-    
-    const courseDate = new Date(course.startDate);
+    const courseDate = new Date(course.startDate!);
     const monthKey = courseDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     
     if (!coursesByMonth[monthKey]) {
@@ -93,9 +98,13 @@ const UpcomingApprovedCourses = () => {
 
   const allMonths = generateAllMonths();
 
-  // Get recent courses (latest 4)
+  // Get recent courses (latest 4, sorted by createdAt)
   const recentCourses = upcomingCourses
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA; // Most recent first
+    })
     .slice(0, 4);
 
   if (loading) {
@@ -219,22 +228,29 @@ const UpcomingApprovedCourses = () => {
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {displayCourses.map((course) => {
-                      const courseDate = new Date(course.startDate);
-                      const today = new Date();
-                      // Set today to start of day for comparison
-                      today.setHours(0, 0, 0, 0);
-                      const daysUntil = Math.ceil((courseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                      let courseDate = null;
+                      let daysUntil = null;
+                      
+                      if (course.startDate) {
+                        courseDate = new Date(course.startDate);
+                        const today = new Date();
+                        // Set today to start of day for comparison
+                        today.setHours(0, 0, 0, 0);
+                        daysUntil = Math.ceil((courseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                      }
                       
                       return (
                         <div key={course.id} className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200 hover:shadow-md transition-shadow duration-200">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm font-medium text-orange-800">
-                              {courseDate.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {courseDate && (
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="text-sm font-medium text-orange-800">
+                                {courseDate.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </div>
+                              <div className="text-xs text-orange-600">
+                                {daysUntil !== null && (daysUntil > 0 ? `${daysUntil} days left` : daysUntil === 0 ? 'Starts today' : 'Started')}
+                              </div>
                             </div>
-                            <div className="text-xs text-orange-600">
-                              {daysUntil > 0 ? `${daysUntil} days left` : daysUntil === 0 ? 'Starts today' : 'Started'}
-                            </div>
-                          </div>
+                          )}
                           
                           <div className="mb-3">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">

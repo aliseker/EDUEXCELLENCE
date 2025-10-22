@@ -158,8 +158,14 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center group">
-              <div className="h-12 w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-200">
-                <span className="text-white font-bold text-xl">E</span>
+              <div className="h-12 w-12 rounded-xl shadow-lg group-hover:shadow-xl transition-all duration-200 overflow-hidden">
+                <Image
+                  src="/images/logo.jpg"
+                  alt="EduExcellence Logo"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div className="ml-3">
                 <div className="text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">

@@ -26,7 +26,6 @@ namespace EduExcellence.Domain.Entities
         [MaxLength(100)]
         public string Author { get; set; } = string.Empty;
 
-        [MaxLength(500000)]
         public string? ImageUrl { get; set; }
 
         public int ReadTime { get; set; } = 5; // in minutes
@@ -45,7 +44,6 @@ namespace EduExcellence.Domain.Entities
         public int BlogId { get; set; }
 
         [Required]
-        [MaxLength(500000)]
         public string ImageUrl { get; set; } = string.Empty;
 
         [MaxLength(200)]

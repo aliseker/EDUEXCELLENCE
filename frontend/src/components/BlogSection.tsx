@@ -27,10 +27,18 @@ const BlogSection = () => {
         const response = await fetch('https://localhost:7166/api/Blogs');
         if (response.ok) {
           const data = await response.json();
+          
+          // Tarihe göre en yeniden en eskiye sırala
+          data.sort((a: any, b: any) => {
+            const dateA = new Date(a.publishedAt || a.createdAt).getTime();
+            const dateB = new Date(b.publishedAt || b.createdAt).getTime();
+            return dateB - dateA;
+          });
+          
           // Eğer featured blog yoksa, tüm blog'ları al
           let featuredBlogs = data.filter((blog: any) => blog.isFeatured);
           if (featuredBlogs.length === 0) {
-            featuredBlogs = data.slice(0, 4); // İlk 4 blog'u al
+            featuredBlogs = data.slice(0, 4); // İlk 4 blog'u al (en yeni olanlar)
           } else {
             featuredBlogs = featuredBlogs.slice(0, 4); // İlk 4 featured blog'u al
           }

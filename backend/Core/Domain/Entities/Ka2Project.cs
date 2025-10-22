@@ -18,6 +18,9 @@ namespace EduExcellence.Domain.Entities
         public new bool IsActive { get; set; } = true;
         public string? ImageUrl { get; set; }
         public List<string> Tags { get; set; } = new();
+        
+        // Navigation property for Meetings
+        public ICollection<Meeting> Meetings { get; set; } = new List<Meeting>();
     }
 }
 

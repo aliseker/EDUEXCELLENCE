@@ -15,6 +15,9 @@ namespace EduExcellence.Domain.Interfaces
         IRepository<Ka2Project> Ka2Projects { get; }
         IRepository<SocialMedia> SocialMediaRepository { get; }
         IRepository<Review> ReviewRepository { get; }
+        IHeroRepository HeroRepository { get; }
+        IHeroItemRepository HeroItemRepository { get; }
+        IMeetingRepository Meetings { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();

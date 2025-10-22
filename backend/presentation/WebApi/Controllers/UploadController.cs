@@ -87,6 +87,68 @@ namespace EduExcellence.WebApi.Controllers
             }
         }
 
+        [HttpPost("multiple")]
+        public async Task<IActionResult> UploadMultipleFiles(List<IFormFile> files)
+        {
+            try
+            {
+                if (files == null || files.Count == 0)
+                {
+                    return BadRequest(new { message = "No files uploaded." });
+                }
+
+                var uploadedUrls = new List<string>();
+                var allowedImageTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+                var maxImageSize = 10 * 1024 * 1024; // 10MB
+
+                foreach (var file in files)
+                {
+                    // Validate file type
+                    if (!allowedImageTypes.Contains(file.ContentType))
+                    {
+                        continue; // Skip invalid files
+                    }
+
+                    // Validate file size
+                    if (file.Length > maxImageSize)
+                    {
+                        continue; // Skip files that are too large
+                    }
+
+                    // Create upload directory
+                    var uploadsPath = Path.Combine(_environment.WebRootPath, "uploads", "image");
+                    if (!Directory.Exists(uploadsPath))
+                    {
+                        Directory.CreateDirectory(uploadsPath);
+                    }
+
+                    // Generate unique filename
+                    var fileExtension = Path.GetExtension(file.FileName);
+                    var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    // Save file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    // Add file URL to list
+                    var fileUrl = $"/uploads/image/{fileName}";
+                    uploadedUrls.Add(fileUrl);
+                    
+                    _logger.LogInformation("File uploaded successfully: {FileName}", fileName);
+                }
+
+                return Ok(uploadedUrls);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading files");
+                return StatusCode(500, new { message = "An error occurred while uploading files." });
+            }
+        }
+
         [HttpDelete("{fileName}")]
         [Authorize(Roles = "Admin,SuperAdmin")]
         public IActionResult DeleteFile(string fileName, string type)
@@ -112,5 +174,9 @@ namespace EduExcellence.WebApi.Controllers
         }
     }
 }
+
+
+
+
 
 

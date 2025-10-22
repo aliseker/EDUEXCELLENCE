@@ -16,6 +16,7 @@ export default function AdminHome() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [isContactSaving, setIsContactSaving] = useState(false);
   const [formKey, setFormKey] = useState(0); // Form reset için
   const router = useRouter();
@@ -76,6 +77,14 @@ export default function AdminHome() {
   const [ka1Courses, setKa1Courses] = useState<any[]>([]);
 
   const [ka2Projects, setKa2Projects] = useState<any[]>([]);
+  
+  // Meeting management states
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [currentProjectMeetings, setCurrentProjectMeetings] = useState<any[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [editingMeeting, setEditingMeeting] = useState<any>(null);
+  const [meetingImages, setMeetingImages] = useState<File[]>([]);
+  const [meetingImagePreviews, setMeetingImagePreviews] = useState<string[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -127,23 +136,35 @@ export default function AdminHome() {
       const blogsResponse = await fetch('https://localhost:7166/api/Blogs');
       if (blogsResponse.ok) {
         const blogsData = await blogsResponse.json();
-        setBlogs(blogsData);
+        // Sort by date descending (newest first)
+        const sortedBlogs = blogsData.sort((a: any, b: any) => 
+          new Date(b.createdAt || b.publishedAt).getTime() - new Date(a.createdAt || a.publishedAt).getTime()
+        );
+        setBlogs(sortedBlogs);
       }
 
       // Fetch courses
         const coursesResponse = await fetch('https://localhost:7166/api/Courses');
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
-        setCourses(coursesData);
+        // Sort by date descending (newest first)
+        const sortedCourses = coursesData.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setCourses(sortedCourses);
         // Also set ka1Courses for backward compatibility
-        setKa1Courses(coursesData);
+        setKa1Courses(sortedCourses);
       }
 
       // Fetch KA2 projects
       const ka2Response = await fetch('https://localhost:7166/api/Ka2');
       if (ka2Response.ok) {
         const ka2Data = await ka2Response.json();
-        setKa2Projects(ka2Data);
+        // Sort by date descending (newest first)
+        const sortedKa2 = ka2Data.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setKa2Projects(sortedKa2);
       }
 
       // Fetch contacts
@@ -297,6 +318,18 @@ export default function AdminHome() {
     setModalType(type);
     setEditingItem(item);
     setFormKey(prev => prev + 1); // Form'u reset et
+    
+    // Blog düzenleme için mevcut resimleri yükle
+    if (type === 'blog' && item?.images) {
+      setExistingImages(item.images);
+    } else {
+      setExistingImages([]);
+    }
+    
+    // Yeni resim seçimlerini temizle
+    setSelectedImages([]);
+    setImagePreviews([]);
+    
     setShowModal(true);
     if (type === 'ka1course') {
       // Extract day count from duration (e.g., "3 DAYS" -> 3)
@@ -525,6 +558,11 @@ export default function AdminHome() {
     setImagePreviews(newPreviews);
   };
 
+  const removeExistingImage = (index: number) => {
+    const newExistingImages = existingImages.filter((_, i) => i !== index);
+    setExistingImages(newExistingImages);
+  };
+
   const handleDelete = async (type: string, id: number) => {
     if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
       const token = localStorage.getItem('adminToken');
@@ -728,18 +766,21 @@ export default function AdminHome() {
             }
           }
 
+          // Combine existing images with new images
+          const allImages = [...existingImages, ...imageUrls];
+          
           const blogData: any = {
             title: data.title,
             excerpt: data.content,
             fullContent: data.fullContent || data.content,
             type: data.type || 'news',
             author: 'Admin',
-            images: imageUrls
+            images: allImages
           };
 
           // Only add imageUrl if there are images
-          if (imageUrls.length > 0) {
-            blogData.imageUrl = imageUrls[0];
+          if (allImages.length > 0) {
+            blogData.imageUrl = allImages[0];
           }
 
           console.log('Blog data being sent:', blogData);
@@ -811,8 +852,8 @@ export default function AdminHome() {
             description: data.description,
             fee: data.fee,
             duration: `${data.duration} DAYS`,
-            startDate: data.startDate ? new Date(data.startDate + 'T00:00:00').toISOString() : new Date().toISOString(),
-            endDate: data.endDate ? new Date(data.endDate + 'T00:00:00').toISOString() : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+            startDate: data.startDate ? new Date(data.startDate + 'T00:00:00').toISOString() : null,
+            endDate: data.endDate ? new Date(data.endDate + 'T00:00:00').toISOString() : null,
             location: data.location,
             level: data.level,
             maxParticipants: parseInt(data.maxParticipants),
@@ -965,9 +1006,169 @@ export default function AdminHome() {
       setEditingItem(null);
       setSelectedImages([]);
       setImagePreviews([]);
+      setExistingImages([]);
     } catch (error) {
       console.error('Error saving data:', error);
       alert('Error saving data. Please try again.');
+    }
+  };
+
+  // Meeting Management Functions
+  const handleManageMeetings = async (projectId: number) => {
+    setSelectedProjectId(projectId);
+    setShowMeetingModal(true);
+    
+    try {
+      const response = await fetch(`https://localhost:7166/api/Meeting/project/${projectId}`);
+      if (response.ok) {
+        const meetings = await response.json();
+        setCurrentProjectMeetings(meetings);
+      }
+    } catch (error) {
+      console.error('Error fetching meetings:', error);
+    }
+  };
+
+  const handleAddMeeting = () => {
+    setEditingMeeting({
+      title: '',
+      description: '',
+      images: []
+    });
+    setMeetingImages([]);
+    setMeetingImagePreviews([]);
+  };
+
+  const handleEditMeeting = (meeting: any) => {
+    setEditingMeeting(meeting);
+    // Convert relative URLs to absolute URLs for preview
+    const imagePreviews = (meeting.images || []).map((img: string) => 
+      img.startsWith('http') ? img : `https://localhost:7166${img}`
+    );
+    setMeetingImagePreviews(imagePreviews);
+  };
+
+  const handleMeetingImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setMeetingImages(prev => [...prev, ...files]);
+    
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setMeetingImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveMeetingImage = (index: number) => {
+    setMeetingImagePreviews(prev => prev.filter((_, i) => i !== index));
+    if (index < (editingMeeting?.images?.length || 0)) {
+      // Eski resim siliniyor
+      setEditingMeeting((prev: any) => ({
+        ...prev,
+        images: prev.images.filter((_: any, i: number) => i !== index)
+      }));
+    } else {
+      // Yeni yüklenen resim siliniyor
+      const newImageIndex = index - (editingMeeting?.images?.length || 0);
+      setMeetingImages(prev => prev.filter((_, i) => i !== newImageIndex));
+    }
+  };
+
+  const handleSaveMeeting = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedProjectId) return;
+
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('meetingTitle') as string;
+    const description = formData.get('meetingDescription') as string;
+
+    try {
+      // Yeni resimleri upload et
+      let uploadedImageUrls: string[] = [];
+      
+      if (meetingImages.length > 0) {
+        const imageFormData = new FormData();
+        meetingImages.forEach(file => {
+          imageFormData.append('files', file);
+        });
+
+        const uploadResponse = await fetch('https://localhost:7166/api/Upload/multiple', {
+          method: 'POST',
+          body: imageFormData,
+        });
+
+        if (uploadResponse.ok) {
+          uploadedImageUrls = await uploadResponse.json();
+        }
+      }
+
+      // Eski resimlerle yeni resimleri birleştir
+      const allImages = [...(editingMeeting?.images || []), ...uploadedImageUrls];
+
+      const meetingData = {
+        id: editingMeeting?.id || 0,
+        title,
+        description,
+        images: allImages,
+        ka2ProjectId: selectedProjectId
+      };
+
+      if (editingMeeting?.id) {
+        // Update existing meeting
+        const response = await fetch(`https://localhost:7166/api/Meeting/${editingMeeting.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(meetingData),
+        });
+
+        if (response.ok) {
+          const updated = await response.json();
+          setCurrentProjectMeetings(prev => 
+            prev.map(m => m.id === updated.id ? updated : m)
+          );
+          toast.success('Meeting başarıyla güncellendi!');
+        }
+      } else {
+        // Create new meeting
+        const response = await fetch('https://localhost:7166/api/Meeting', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(meetingData),
+        });
+
+        if (response.ok) {
+          const created = await response.json();
+          setCurrentProjectMeetings(prev => [...prev, created]);
+          toast.success('Meeting başarıyla eklendi!');
+        }
+      }
+
+      setEditingMeeting(null);
+      setMeetingImages([]);
+      setMeetingImagePreviews([]);
+    } catch (error) {
+      console.error('Error saving meeting:', error);
+      toast.error('Meeting kaydedilemedi!');
+    }
+  };
+
+  const handleDeleteMeeting = async (meetingId: number) => {
+    if (!confirm('Bu meeting\'i silmek istediğinizden emin misiniz?')) return;
+
+    try {
+      const response = await fetch(`https://localhost:7166/api/Meeting/${meetingId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setCurrentProjectMeetings(prev => prev.filter(m => m.id !== meetingId));
+        toast.success('Meeting başarıyla silindi!');
+      }
+    } catch (error) {
+      console.error('Error deleting meeting:', error);
+      toast.error('Meeting silinemedi!');
     }
   };
 
@@ -1048,6 +1249,16 @@ export default function AdminHome() {
               }`}
             >
               KA2 Projeleri
+            </button>
+            <button
+              onClick={() => setActiveTab('hero')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'hero'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
+              }`}
+            >
+              Hero Yönetimi
             </button>
             <button
               onClick={() => router.push('/admin/social-media')}
@@ -1556,6 +1767,16 @@ export default function AdminHome() {
                       </div>
                       <div className="flex space-x-2 ml-4">
                         <button
+                          onClick={() => handleManageMeetings(project.id)}
+                          className="px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200 flex items-center"
+                          title="Manage Meetings"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          Meetings
+                        </button>
+                        <button
                           onClick={() => handleEdit('ka2project', project)}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                           title="Düzenle"
@@ -1591,6 +1812,40 @@ export default function AdminHome() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hero Yönetimi Tab */}
+        {activeTab === 'hero' && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-gray-900">Hero Yönetimi</h2>
+              <button
+                onClick={() => router.push('/admin/hero')}
+                className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Hero Yönetimi
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Hero Yönetimi</h3>
+                <p className="text-gray-500 mb-6">Ana sayfa hero bölümünü yönetmek için ayrı sayfaya gidin</p>
+                <button
+                  onClick={() => router.push('/admin/hero')}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Hero Yönetimine Git
+                </button>
               </div>
             </div>
           </div>
@@ -1710,21 +1965,28 @@ export default function AdminHome() {
                       </div>
                       
                       {/* Image Previews */}
-                      {(imagePreviews.length > 0 || (editingItem?.images && editingItem.images.length > 0)) && (
+                      {(imagePreviews.length > 0 || existingImages.length > 0) && (
                         <div className="mt-4">
                           <h4 className="text-sm font-medium text-gray-900 mb-3">
-                            {editingItem?.images && editingItem.images.length > 0 ? 'Mevcut Resimler' : 'Seçilen Resimler'} 
-                            ({editingItem?.images ? editingItem.images.length : imagePreviews.length})
+                            Resimler ({existingImages.length + imagePreviews.length})
                           </h4>
                           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                             {/* Mevcut resimler */}
-                            {editingItem?.images && editingItem.images.map((image: string, index: number) => (
+                            {existingImages.map((image: string, index: number) => (
                               <div key={`existing-${index}`} className="relative group">
                                 <img
                                   src={image}
                                   alt={`Mevcut resim ${index + 1}`}
                                   className="w-full h-24 object-cover rounded-lg border border-gray-200"
                                 />
+                                <button
+                                  type="button"
+                                  onClick={() => removeExistingImage(index)}
+                                  className="absolute top-1 right-1 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                                  title="Sil"
+                                >
+                                  ×
+                                </button>
                                 <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
                                   Mevcut Resim {index + 1}
                                 </div>
@@ -1852,6 +2114,7 @@ export default function AdminHome() {
                           type="number"
                           name="maxParticipants"
                           defaultValue={editingItem?.maxParticipants || ''}
+                          min="0"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
                           required
                         />
@@ -1862,6 +2125,16 @@ export default function AdminHome() {
                           type="number"
                           name="currentParticipants"
                           defaultValue={editingItem?.currentParticipants || ''}
+                          min="0"
+                          onInput={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            const maxInput = document.querySelector('input[name="maxParticipants"]') as HTMLInputElement;
+                            const maxValue = parseInt(maxInput?.value || '0');
+                            const currentValue = parseInt(target.value || '0');
+                            if (currentValue > maxValue) {
+                              target.value = maxValue.toString();
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
                           required
                         />
@@ -1869,23 +2142,21 @@ export default function AdminHome() {
                     </div>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">Start Date</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">Start Date (Opsiyonel)</label>
                         <input
                           type="date"
                           name="startDate"
                           defaultValue={editingItem?.startDate ? editingItem.startDate.split('T')[0] : ''}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
-                          required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-2">End Date</label>
+                        <label className="block text-sm font-medium text-gray-900 mb-2">End Date (Opsiyonel)</label>
                         <input
                           type="date"
                           name="endDate"
                           defaultValue={editingItem?.endDate ? editingItem.endDate.split('T')[0] : ''}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
-                          required
                         />
                       </div>
                     </div>
@@ -2452,6 +2723,202 @@ export default function AdminHome() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Meeting Management Modal */}
+      {showMeetingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+              <h2 className="text-2xl font-bold text-gray-900">Meeting Yönetimi</h2>
+              <button
+                onClick={() => {
+                  setShowMeetingModal(false);
+                  setCurrentProjectMeetings([]);
+                  setSelectedProjectId(null);
+                  setEditingMeeting(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Add Meeting Button */}
+              {!editingMeeting && (
+                <button
+                  onClick={handleAddMeeting}
+                  className="w-full mb-6 flex items-center justify-center px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Yeni Meeting Ekle
+                </button>
+              )}
+
+              {/* Meeting Form */}
+              {editingMeeting && (
+                <form onSubmit={handleSaveMeeting} className="mb-6 bg-purple-50 p-6 rounded-lg border border-purple-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    {editingMeeting.id ? 'Meeting Düzenle' : 'Yeni Meeting'}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Başlık *</label>
+                      <input
+                        type="text"
+                        name="meetingTitle"
+                        defaultValue={editingMeeting.title}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Açıklama *</label>
+                      <textarea
+                        name="meetingDescription"
+                        defaultValue={editingMeeting.description}
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Fotoğraflar</label>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleMeetingImageChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                      />
+                      
+                      {/* Image Previews */}
+                      {meetingImagePreviews.length > 0 && (
+                        <div className="mt-4 grid grid-cols-4 gap-4">
+                          {meetingImagePreviews.map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-24 object-cover rounded-lg"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMeetingImage(index)}
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingMeeting(null);
+                        setMeetingImages([]);
+                        setMeetingImagePreviews([]);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700"
+                    >
+                      {editingMeeting.id ? 'Güncelle' : 'Ekle'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Meetings List */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Mevcut Meetingler ({currentProjectMeetings.length})</h3>
+                {currentProjectMeetings.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-gray-600">Henüz meeting eklenmemiş</p>
+                  </div>
+                ) : (
+                  currentProjectMeetings.map((meeting) => (
+                    <div key={meeting.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="text-lg font-semibold text-gray-900 mb-2">{meeting.title}</h4>
+                          <p className="text-gray-600 mb-3 line-clamp-2">{meeting.description}</p>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span className="flex items-center">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              {meeting.images?.length || 0} Fotoğraf
+                            </span>
+                            <span>
+                              {new Date(meeting.createdAt).toLocaleDateString('tr-TR')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 ml-4">
+                          <button
+                            onClick={() => handleEditMeeting(meeting)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Düzenle"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMeeting(meeting.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Sil"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Meeting Images */}
+                      {meeting.images && meeting.images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-6 gap-2">
+                          {meeting.images.slice(0, 6).map((image: string, idx: number) => (
+                            <img
+                              key={idx}
+                              src={image.startsWith('http') ? image : `https://localhost:7166${image}`}
+                              alt={`Meeting ${idx + 1}`}
+                              className="w-full h-20 object-cover rounded-lg"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>

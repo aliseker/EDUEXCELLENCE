@@ -45,6 +45,11 @@ class ApiService {
       const response = await fetch(url, config);
       
       if (!response.ok) {
+        // Rate limiting hatası için özel mesaj
+        if (response.status === 429) {
+          throw new Error('Çok fazla deneme yaptınız. 15 dakika sonra tekrar deneyin.');
+        }
+        
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
@@ -203,6 +208,76 @@ class ApiService {
   async deleteBlog(id: number) {
     return this.request(`/blogs/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  // Hero endpoints
+  async getActiveHero() {
+    return this.request<{
+      id: number;
+      title: string;
+      description?: string;
+      items: Array<{
+        id: number;
+        text: string;
+        heroId: number;
+      }>;
+      createdAt: string;
+      updatedAt: string;
+    }>('/hero/active');
+  }
+
+  async getHeroes() {
+    return this.request<Array<{
+      id: number;
+      title: string;
+      description?: string;
+      items: Array<{
+        id: number;
+        text: string;
+        heroId: number;
+      }>;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/hero');
+  }
+
+  async getHeroById(id: number) {
+    return this.request(`/hero/${id}`);
+  }
+
+  async createHero(heroData: {
+    title: string;
+    description?: string;
+    items: Array<{ text: string }>;
+  }) {
+    return this.request('/hero', {
+      method: 'POST',
+      body: JSON.stringify(heroData),
+    });
+  }
+
+  async updateHero(id: number, heroData: {
+    id: number;
+    title: string;
+    description?: string;
+    items: Array<{ id: number; text: string }>;
+  }) {
+    return this.request(`/hero/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...heroData, id }),
+    });
+  }
+
+  async deleteHero(id: number) {
+    return this.request(`/hero/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async setActiveHero(id: number) {
+    return this.request(`/hero/${id}/activate`, {
+      method: 'POST',
     });
   }
 

@@ -36,6 +36,14 @@ const NewsPage = () => {
         if (response.ok) {
           const apiBlogs = await response.json();
           console.log('API Response:', apiBlogs); // Debug için
+          
+          // Tarihe göre en yeniden en eskiye sırala (en son yüklenen en başta)
+          apiBlogs.sort((a: any, b: any) => {
+            const dateA = new Date(a.createdAt || a.publishedAt).getTime();
+            const dateB = new Date(b.createdAt || b.publishedAt).getTime();
+            return dateB - dateA; // En yeni önce
+          });
+          
           setAllContent(apiBlogs);
           setFilteredContent(apiBlogs);
         } else {
@@ -52,11 +60,21 @@ const NewsPage = () => {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+    let filtered;
     if (tab === 'all') {
-      setFilteredContent(allContent);
+      filtered = allContent;
     } else {
-      setFilteredContent(allContent.filter(item => item.type === tab));
+      filtered = allContent.filter(item => item.type === tab);
     }
+    
+    // Filtrelenmiş içeriği de tarihe göre sırala
+    filtered.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || a.publishedAt).getTime();
+      const dateB = new Date(b.createdAt || b.publishedAt).getTime();
+      return dateB - dateA; // En yeni önce
+    });
+    
+    setFilteredContent(filtered);
   };
 
   const getPriorityColor = (priority: string) => {

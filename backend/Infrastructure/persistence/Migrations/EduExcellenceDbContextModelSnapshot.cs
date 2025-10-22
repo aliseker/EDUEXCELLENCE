@@ -75,19 +75,6 @@ namespace persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Admins");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 19, 18, 28, 56, 994, DateTimeKind.Utc).AddTicks(9028),
-                            Email = "admin@edu-excellence.com",
-                            FirstName = "Admin",
-                            IsActive = true,
-                            IsSuperAdmin = true,
-                            LastName = "User",
-                            PasswordHash = "$2a$11$JW.knwPYx1VQw46w3Uvh..laNFa.bbKtYaC0FAwEsWTxI7YFfWSnq"
-                        });
                 });
 
             modelBuilder.Entity("EduExcellence.Domain.Entities.Blog", b =>
@@ -121,8 +108,7 @@ namespace persistence.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -174,8 +160,7 @@ namespace persistence.Migrations
 
                     b.Property<string>("ImageUrl")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -233,44 +218,6 @@ namespace persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Contacts");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 10, 19, 18, 28, 56, 994, DateTimeKind.Utc).AddTicks(9909),
-                            Details = "[\"Kısla Mah. 37 Sk. Cengizhan Apt. B Girişi No: 6\", \"İç Kapı No: 102 Muratpaşa, Antalya / Türkiye\"]",
-                            IsActive = true,
-                            IsPrimary = true,
-                            Order = 1,
-                            Title = "Adres",
-                            Type = "address",
-                            UpdatedAt = new DateTime(2025, 10, 19, 18, 28, 56, 994, DateTimeKind.Utc).AddTicks(9910)
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2025, 10, 19, 18, 28, 56, 994, DateTimeKind.Utc).AddTicks(9918),
-                            Details = "[\"+90 505 274 90 36\"]",
-                            IsActive = true,
-                            IsPrimary = true,
-                            Order = 2,
-                            Title = "Telefon",
-                            Type = "phone",
-                            UpdatedAt = new DateTime(2025, 10, 19, 18, 28, 56, 994, DateTimeKind.Utc).AddTicks(9919)
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2025, 10, 19, 18, 28, 56, 994, DateTimeKind.Utc).AddTicks(9921),
-                            Details = "[\"info@edu-excellence.net\"]",
-                            IsActive = true,
-                            IsPrimary = true,
-                            Order = 3,
-                            Title = "E-posta",
-                            Type = "email",
-                            UpdatedAt = new DateTime(2025, 10, 19, 18, 28, 56, 994, DateTimeKind.Utc).AddTicks(9921)
-                        });
                 });
 
             modelBuilder.Entity("EduExcellence.Domain.Entities.ContactMessage", b =>
@@ -471,6 +418,71 @@ namespace persistence.Migrations
                     b.ToTable("CourseLearningOutcomes");
                 });
 
+            modelBuilder.Entity("EduExcellence.Domain.Entities.Hero", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("Heroes");
+                });
+
+            modelBuilder.Entity("EduExcellence.Domain.Entities.HeroItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("HeroId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HeroId");
+
+                    b.ToTable("HeroItems");
+                });
+
             modelBuilder.Entity("EduExcellence.Domain.Entities.Ka2Project", b =>
                 {
                     b.Property<int>("Id")
@@ -503,8 +515,7 @@ namespace persistence.Migrations
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -556,6 +567,46 @@ namespace persistence.Migrations
                     b.ToTable("Ka2Projects");
                 });
 
+            modelBuilder.Entity("EduExcellence.Domain.Entities.Meeting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Ka2ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Ka2ProjectId");
+
+                    b.ToTable("Meetings");
+                });
+
             modelBuilder.Entity("EduExcellence.Domain.Entities.Review", b =>
                 {
                     b.Property<int>("Id")
@@ -578,7 +629,7 @@ namespace persistence.Migrations
 
                     b.Property<string>("ImageUrl")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -706,6 +757,28 @@ namespace persistence.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("EduExcellence.Domain.Entities.HeroItem", b =>
+                {
+                    b.HasOne("EduExcellence.Domain.Entities.Hero", "Hero")
+                        .WithMany("Items")
+                        .HasForeignKey("HeroId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Hero");
+                });
+
+            modelBuilder.Entity("EduExcellence.Domain.Entities.Meeting", b =>
+                {
+                    b.HasOne("EduExcellence.Domain.Entities.Ka2Project", "Ka2Project")
+                        .WithMany("Meetings")
+                        .HasForeignKey("Ka2ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ka2Project");
+                });
+
             modelBuilder.Entity("EduExcellence.Domain.Entities.Blog", b =>
                 {
                     b.Navigation("Images");
@@ -716,6 +789,16 @@ namespace persistence.Migrations
                     b.Navigation("DailyPrograms");
 
                     b.Navigation("LearningOutcomes");
+                });
+
+            modelBuilder.Entity("EduExcellence.Domain.Entities.Hero", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("EduExcellence.Domain.Entities.Ka2Project", b =>
+                {
+                    b.Navigation("Meetings");
                 });
 #pragma warning restore 612, 618
         }

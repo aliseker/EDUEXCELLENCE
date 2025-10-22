@@ -9,8 +9,8 @@ interface CourseCardProps {
   description: string;
   fee: string;
   duration: string;
-  startDate: string;
-  endDate: string;
+  startDate: string | null;
+  endDate: string | null;
   location: string;
   level: string;
   maxParticipants: number;
@@ -68,11 +68,25 @@ const CourseCard = ({
         </h3>
         <div className="flex items-center justify-between text-xs">
           <span>📍 {location}</span>
-          <span>📅 {new Date(startDate).toLocaleDateString('tr-TR', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-          })}</span>
+          <span>📅 {
+            startDate && endDate 
+              ? `${new Date(startDate).toLocaleDateString('tr-TR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                })} - ${new Date(endDate).toLocaleDateString('tr-TR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                })}`
+              : startDate
+              ? new Date(startDate).toLocaleDateString('tr-TR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                })
+              : 'To be announced'
+          }</span>
         </div>
       </div>
 

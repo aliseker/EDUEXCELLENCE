@@ -22,6 +22,7 @@ interface Course {
   learningOutcomes: string[];
   dailyProgram: string[];
   imageUrl?: string;
+  createdAt?: string;
 }
 
 const KA1CoursesPage = () => {
@@ -45,6 +46,14 @@ const KA1CoursesPage = () => {
       const response = await fetch('https://localhost:7166/api/Courses');
       if (response.ok) {
         const apiCourses = await response.json();
+        
+        // Tarihe göre en yeniden en eskiye sırala (createdAt)
+        apiCourses.sort((a: any, b: any) => {
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        });
+        
         // Convert API data to component format
         const convertedCourses = apiCourses.map((course: any) => ({
           id: course.id,
@@ -61,7 +70,8 @@ const KA1CoursesPage = () => {
           currentParticipants: course.currentParticipants,
           isApproved: course.isApproved,
           learningOutcomes: course.learningOutcomes || [],
-          dailyProgram: course.dailyPrograms || []
+          dailyProgram: course.dailyPrograms || [],
+          createdAt: course.createdAt
         }));
         
         setCourses(convertedCourses);
@@ -87,31 +97,37 @@ const KA1CoursesPage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Get all courses (no date filtering)
-  const upcomingCourses = courses;
+  // Get all approved courses with start dates in the future (upcoming)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set to start of day for comparison
+  
+  const upcomingCourses = courses.filter(course => {
+    // Must be approved
+    if (course.isApproved !== true) return false;
+    
+    // Must have a start date
+    if (!course.startDate) return false;
+    
+    // Start date must be in the future (not started yet)
+    const courseStartDate = new Date(course.startDate);
+    courseStartDate.setHours(0, 0, 0, 0);
+    
+    return courseStartDate >= today;
+  });
 
-  // Get most recent 4 courses (sorted by start date, all courses)
+  // Get most recent 4 courses (already sorted by createdAt from API)
   const recentCourses = upcomingCourses
     .sort((a, b) => {
-      // Handle null dates - put courses without dates at the end
-      if (!a.startDate && !b.startDate) return 0;
-      if (!a.startDate) return 1;
-      if (!b.startDate) return -1;
-      return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA; // Most recent first
     })
     .slice(0, 4);
 
   // Group upcoming courses by month
-  const coursesByMonth = upcomingCourses.reduce((acc, course) => {
-    if (!course.startDate) {
-      // Put courses without dates in "Tarih Belirtilmemiş" group
-      const monthKey = 'Tarih Belirtilmemiş';
-      if (!acc[monthKey]) {
-        acc[monthKey] = [];
-      }
-      acc[monthKey].push(course);
-      return acc;
-    }
+  const coursesByMonth: { [key: string]: Course[] } = {};
+  upcomingCourses.forEach(course => {
+    if (!course.startDate) return; // Skip courses without dates
     
     const courseDate = new Date(course.startDate);
     const monthKey = courseDate.toLocaleDateString('en-US', { 
@@ -119,20 +135,22 @@ const KA1CoursesPage = () => {
       month: 'long' 
     });
     
-    if (!acc[monthKey]) {
-      acc[monthKey] = [];
+    if (!coursesByMonth[monthKey]) {
+      coursesByMonth[monthKey] = [];
     }
-    acc[monthKey].push(course);
-    return acc;
-  }, {} as Record<string, Course[]>);
+    coursesByMonth[monthKey].push(course);
+  });
 
   // Generate all months for the next 12 months, starting from current month
   const generateAllMonths = () => {
     const months = [];
-    const today = new Date();
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
     
+    // Start from current month and go 12 months ahead
     for (let i = 0; i < 12; i++) {
-      const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
+      const monthDate = new Date(currentYear, currentMonth + i, 1);
       const monthKey = monthDate.toLocaleDateString('en-US', { 
         year: 'numeric', 
         month: 'long' 
@@ -144,27 +162,23 @@ const KA1CoursesPage = () => {
   };
 
   const allMonths = generateAllMonths();
-  
-  // Add "Tarih Belirtilmemiş" to months if there are courses without dates
-  const hasCoursesWithoutDates = courses.some(course => !course.startDate);
-  if (hasCoursesWithoutDates) {
-    allMonths.push('Tarih Belirtilmemiş');
-  }
-  
-  // Debug logs
-  console.log('All months:', allMonths);
-  console.log('Courses by month:', coursesByMonth);
-  console.log('Upcoming courses:', upcomingCourses.map(c => ({ title: c.title, startDate: c.startDate })));
-  
-  // Set current month as default selected
-  useEffect(() => {
-    if (allMonths.length > 0 && !selectedMonth) {
-      setSelectedMonth(allMonths[0]); // Current month (first in array)
-    }
-  }, [allMonths, selectedMonth]);
 
-  // Filter courses based on current filters (all courses, including upcoming ones)
-  const filteredCourses = courses.filter(course => {
+  // First, get all courses that are not past (based on end date)
+  const notPastCourses = courses.filter(course => {
+    // If no end date, keep it
+    if (!course.endDate) return true;
+    
+    // Check if end date is today or in the future
+    const courseEndDate = new Date(course.endDate);
+    courseEndDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return courseEndDate >= today;
+  });
+
+  // Filter courses based on current filters (only not-past courses)
+  const filteredCourses = notPastCourses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(filters.search.toLowerCase()) ||
                          course.description.toLowerCase().includes(filters.search.toLowerCase());
     const matchesLocation = !filters.location || course.location.toLowerCase() === filters.location.toLowerCase();
@@ -176,9 +190,9 @@ const KA1CoursesPage = () => {
     return matchesSearch && matchesLocation && matchesLevel && matchesApproved;
   });
 
-  // Get unique values for filter options
-  const allLocations = [...new Set(courses.map(course => course.location))].sort();
-  const levels = [...new Set(courses.map(course => course.level))];
+  // Get unique values for filter options (from not-past courses)
+  const allLocations = [...new Set(notPastCourses.map(course => course.location))].sort();
+  const levels = [...new Set(notPastCourses.map(course => course.level))];
 
   // Pagination logic
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
@@ -263,7 +277,7 @@ const KA1CoursesPage = () => {
                 {/* Month Selector Row - Toggleable */}
                 {showMonthSelector && (
                   <div className="mt-4 bg-white rounded-lg shadow-sm border border-orange-200 p-2">
-                    <div className="grid grid-cols-12 gap-1">
+                    <div className="grid grid-cols-6 md:grid-cols-12 gap-1">
                       {allMonths.map((month) => {
                         const hasCourses = coursesByMonth[month] && coursesByMonth[month].length > 0;
                         const courseCount = hasCourses ? coursesByMonth[month].length : 0;
@@ -276,7 +290,7 @@ const KA1CoursesPage = () => {
                             onClick={() => setSelectedMonth(month)}
                             onMouseEnter={() => setHoveredMonth(month)}
                             onMouseLeave={() => setHoveredMonth(null)}
-                            className={`px-2 py-3 rounded-lg border-2 transition-all duration-200 ${
+                            className={`px-1 py-2 rounded-lg border-2 transition-all duration-200 text-xs ${
                               isSelected
                                 ? 'border-orange-500 bg-orange-50 shadow-md'
                                 : isHovered
@@ -292,7 +306,7 @@ const KA1CoursesPage = () => {
                               <div className={`text-xs font-medium ${
                                 isSelected ? 'text-orange-800' : hasCourses ? 'text-orange-700' : 'text-gray-600'
                               }`}>
-                                {month.split(' ')[0]}
+                                {month.split(' ')[0].substring(0, 3)}
                               </div>
                               <div className={`text-xs ${
                                 isSelected ? 'text-orange-600' : hasCourses ? 'text-orange-600' : 'text-gray-500'
@@ -347,75 +361,75 @@ const KA1CoursesPage = () => {
                   
                   // Show courses in grid
                   return (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {displayCourses.map((course) => (
-                    <div key={course.id} className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-                      <div className="p-5">
-                        <div className="flex items-start justify-between mb-3">
-                          <span className="bg-orange-100 text-orange-800 text-xs font-semibold px-3 py-1.5 rounded-full">
-                            {course.category}
-                          </span>
-                          <span className="text-sm font-bold text-gray-800">{course.fee}</span>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {displayCourses.map((course) => {
+                        let courseDate = null;
+                        let daysUntil = null;
                         
-                        <h4 className="text-base font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
-                          {course.title}
-                        </h4>
+                        if (course.startDate) {
+                          courseDate = new Date(course.startDate);
+                          const today = new Date();
+                          // Set today to start of day for comparison
+                          today.setHours(0, 0, 0, 0);
+                          daysUntil = Math.ceil((courseDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                        }
                         
-                        <div className="text-sm text-gray-600 mb-3 flex items-center">
-                          <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          {course.location}
-                        </div>
-                        
-                        <div className="text-sm text-gray-600 mb-3 flex items-center">
-                          <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          {course.startDate ? new Date(course.startDate).toLocaleDateString('tr-TR', {
-                            year: 'numeric',
-                            month: '2-digit',
-                            day: '2-digit'
-                          }) : 'Tarih Belirtilmemiş'}
-                        </div>
-                        
-                        <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
-                          <span className="flex items-center">
-                            <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                            </svg>
-                            Level: {course.level}
-                          </span>
-                          <span className="flex items-center">
-                            <svg className="w-4 h-4 mr-1 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            Participants: {course.currentParticipants}/{course.maxParticipants}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1.5 rounded-full flex items-center">
-                            <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                            Approved
-                          </span>
-                          <Link 
-                            href={`/ka1-courses/${course.id}`}
-                            className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors duration-200 flex items-center"
-                          >
-                            Details
-                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                      ))}
+                        return (
+                          <div key={course.id} className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200 hover:shadow-md transition-shadow duration-200">
+                            {courseDate && (
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="text-sm font-medium text-orange-800">
+                                  {courseDate.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                </div>
+                                <div className="text-xs text-orange-600">
+                                  {daysUntil !== null && (daysUntil > 0 ? `${daysUntil} days left` : daysUntil === 0 ? 'Starts today' : 'Started')}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="mb-3">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Approved
+                              </span>
+                            </div>
+                            
+                            <h3 className="font-bold text-gray-900 mb-2 text-sm leading-tight">
+                              {course.title}
+                            </h3>
+                            
+                            <div className="space-y-1 text-xs text-gray-600">
+                              <div className="flex items-center">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                {course.location}
+                              </div>
+                              <div className="flex items-center">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {course.duration}
+                              </div>
+                              <div className="flex items-center">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                </svg>
+                                {course.fee}
+                              </div>
+                            </div>
+                            
+                            <div className="mt-4">
+                              <Link 
+                                href={`/ka1-courses/${course.id}`}
+                                className="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors duration-200 text-center block"
+                              >
+                                View Details
+                              </Link>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })()}
@@ -540,11 +554,25 @@ const KA1CoursesPage = () => {
                     </h3>
                     <div className="flex items-center justify-between text-xs">
                       <span>📍 {course.location}</span>
-                      <span>📅 {course.startDate ? new Date(course.startDate).toLocaleDateString('tr-TR', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit'
-                      }) : 'Tarih Belirtilmemiş'}</span>
+                      <span>📅 {
+                        course.startDate && course.endDate 
+                          ? `${new Date(course.startDate).toLocaleDateString('tr-TR', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit'
+                            })} - ${new Date(course.endDate).toLocaleDateString('tr-TR', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit'
+                            })}`
+                          : course.startDate
+                          ? new Date(course.startDate).toLocaleDateString('tr-TR', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit'
+                            })
+                          : 'To be announced'
+                      }</span>
                     </div>
                   </div>
 

@@ -180,7 +180,16 @@ namespace EduExcellence.Application.Services
 
         public async Task<IEnumerable<CourseDto>> GetApprovedCoursesAsync()
         {
-            var courses = await _unitOfWork.Courses.FindAsync(c => c.IsApproved);
+            var today = DateTime.UtcNow.Date;
+            
+            // Get only approved courses with future start dates (not null, not past)
+            var courses = await _unitOfWork.Courses.FindAsync(c => 
+                c.IsApproved && 
+                c.IsActive && 
+                c.StartDate != null && 
+                c.StartDate.Value.Date >= today
+            );
+            
             var courseDtos = new List<CourseDto>();
             
             foreach (var course in courses)

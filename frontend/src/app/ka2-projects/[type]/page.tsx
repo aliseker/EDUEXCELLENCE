@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Ka2Project {
   id: number;
@@ -348,6 +349,74 @@ export default function KA2ProjectPage() {
                     </>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Meeting & Dissemination Buttons */}
+      <section className="py-12 bg-gradient-to-br from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-stretch">
+            {/* Meeting Button */}
+            <div className={`group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-transparent hover:border-gradient-to-r ${config.color} flex-1 max-w-md`}>
+              <div className={`absolute inset-0 bg-gradient-to-br ${config.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+              <div className="relative p-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${config.color} rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div className={`px-3 py-1 bg-gradient-to-r ${config.color} rounded-full`}>
+                    <span className="text-xs font-semibold text-white">Interactive</span>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+                  Meeting
+                </h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  Access meeting schedules, agendas, minutes, and collaborative sessions for project coordination and partnership activities.
+                </p>
+                <Link 
+                  href={`/ka2-projects/${projectType}/meetings?projectId=${project?.id}`}
+                  className={`w-full bg-gradient-to-r ${config.color} text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center group`}
+                >
+                  <span>View Meetings</span>
+                  <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </Link>
+              </div>
+            </div>
+
+            {/* Dissemination Button */}
+            <div className={`group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border-2 border-transparent hover:border-gradient-to-r ${config.color} flex-1 max-w-md`}>
+              <div className={`absolute inset-0 bg-gradient-to-br ${config.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+              <div className="relative p-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${config.color} rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
+                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                  </div>
+                  <div className={`px-3 py-1 bg-gradient-to-r ${config.color} rounded-full`}>
+                    <span className="text-xs font-semibold text-white">Resources</span>
+                  </div>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 transition-all duration-300">
+                  Dissemination
+                </h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  Explore project outputs, publications, presentations, and dissemination activities to share project results with stakeholders.
+                </p>
+                <button className={`w-full bg-gradient-to-r ${config.color} text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center group`}>
+                  <span>View Resources</span>
+                  <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>

@@ -2,6 +2,8 @@ using EduExcellence.Application.DTOs.Course;
 using EduExcellence.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+// Rate limiting kaldırıldı
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EduExcellence.WebApi.Controllers
 {

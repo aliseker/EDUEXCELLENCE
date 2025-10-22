@@ -3,8 +3,73 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import HeroAnimation from './HeroAnimation';
+import { useEffect, useState } from 'react';
+import apiService from '@/services/api';
+
+interface HeroData {
+  id: number;
+  title: string;
+  description?: string;
+  items: Array<{
+    id: number;
+    text: string;
+    heroId: number;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const Hero = () => {
+  const [heroData, setHeroData] = useState<HeroData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHeroData = async () => {
+      try {
+        const data = await apiService.getActiveHero();
+        setHeroData(data);
+      } catch (error) {
+        console.error('Error fetching hero data:', error);
+        // Fallback to default content if API fails
+        setHeroData({
+          id: 1,
+          title: 'Discover the World with Erasmus',
+          description: 'Take your career to the next level with international education opportunities. Study in Europe with KA1 and KA2 programs.',
+          items: [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHeroData();
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="relative bg-blue-50 overflow-hidden">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+          <div className="animate-pulse">
+            <div className="h-16 bg-gray-300 rounded mb-4"></div>
+            <div className="h-6 bg-gray-300 rounded mb-8"></div>
+            <div className="h-12 bg-gray-300 rounded w-48"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!heroData) {
+    return null;
+  }
+
+  // Parse title to separate main title and highlighted part
+  const titleParts = heroData.title.split(' with ');
+  const mainTitle = titleParts[0] || heroData.title;
+  const highlightedTitle = titleParts[1] ? `with ${titleParts[1]}` : '';
+
   return (
         <section className="relative bg-blue-50 overflow-hidden">
       {/* Background Animation */}
@@ -19,37 +84,41 @@ const Hero = () => {
       </div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16" style={{ zIndex: 2 }}>
+        {/* Full Width Title Section */}
+        <div className="text-center mb-6">
+          <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
+            {mainTitle}
+            {highlightedTitle && (
+              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mt-2">
+                {highlightedTitle}
+              </span>
+            )}
+          </h1>
+          {heroData.description && (
+            <p className="text-lg lg:text-xl text-gray-600 leading-relaxed max-w-4xl mx-auto">
+              {heroData.description}
+            </p>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Content */}
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-4xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Discover the World
-                <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  with Erasmus
-                </span>
-              </h1>
-              <p className="text-xl text-gray-600 leading-relaxed">
-                Take your career to the next level with international education opportunities. 
-                Study in Europe with KA1 and KA2 programs.
-              </p>
-            </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 py-6">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">500+</div>
-                <div className="text-sm text-gray-600">Graduates</div>
+          <div className="space-y-8 overflow-hidden">
+            {/* Dynamic Items */}
+            {heroData.items && heroData.items.length > 0 && (
+              <div className="py-2">
+                <ul className="space-y-3">
+                  {heroData.items.map((item, index) => (
+                    <li key={item.id} className="flex items-start">
+                      <span className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3"></span>
+                      <span className="text-gray-700 text-lg leading-relaxed break-words overflow-wrap-anywhere">
+                        {item.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">25+</div>
-                <div className="text-sm text-gray-600">Countries</div>
-              </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">95%</div>
-                <div className="text-sm text-gray-600">Success Rate</div>
-              </div>
-            </div>
+            )}
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">

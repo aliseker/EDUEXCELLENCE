@@ -21,6 +21,9 @@ namespace EduExcellence.Infrastructure.Persistence.Context
         public DbSet<Ka2Project> Ka2Projects { get; set; }
         public DbSet<SocialMedia> SocialMedias { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<Hero> Heroes { get; set; }
+        public DbSet<HeroItem> HeroItems { get; set; }
+        public DbSet<Meeting> Meetings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -61,7 +64,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                 entity.Property(e => e.Category).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Type).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Author).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.ImageUrl).HasMaxLength(500);
+                entity.Property(e => e.ImageUrl).HasColumnType("nvarchar(max)");
             });
 
             // Contact configuration
@@ -111,7 +114,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
             modelBuilder.Entity<BlogImage>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.ImageUrl).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.ImageUrl).IsRequired().HasColumnType("nvarchar(max)");
                 entity.Property(e => e.AltText).HasMaxLength(200);
                 entity.HasOne(e => e.Blog)
                     .WithMany(b => b.Images)
@@ -134,7 +137,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                 entity.Property(e => e.Results).IsRequired().HasMaxLength(2000);
                 entity.Property(e => e.TargetGroup).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Budget).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.ImageUrl).HasMaxLength(500);
+                entity.Property(e => e.ImageUrl).HasColumnType("nvarchar(max)");
             });
 
             // SocialMedia configuration
@@ -156,7 +159,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                 entity.Property(e => e.Content).IsRequired().HasMaxLength(1000);
                 entity.Property(e => e.Company).HasMaxLength(100);
                 entity.Property(e => e.Position).HasMaxLength(100);
-                entity.Property(e => e.ImageUrl).HasMaxLength(500);
+                entity.Property(e => e.ImageUrl).HasColumnType("nvarchar(max)");
                 entity.Property(e => e.VideoUrl).HasMaxLength(500);
                 entity.Property(e => e.Type).IsRequired().HasMaxLength(50);
                 entity.HasIndex(e => e.Type);
@@ -164,29 +167,44 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                 entity.HasIndex(e => e.IsApproved);
             });
 
-            // Seed data
-            SeedData(modelBuilder);
-        }
+            // Hero configuration
+            modelBuilder.Entity<Hero>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.HasIndex(e => e.IsActive);
+            });
 
-        private void SeedData(ModelBuilder modelBuilder)
-        {
-            // Seed admin user
-            modelBuilder.Entity<Admin>().HasData(
-                new Admin
-                {
-                    Id = 1,
-                    Email = "admin@edu-excellence.com",
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                    FirstName = "Admin",
-                    LastName = "User",
-                    IsSuperAdmin = true,
-                    CreatedAt = DateTime.UtcNow,
-                    IsActive = true
-                }
-            );
+            // HeroItem configuration
+            modelBuilder.Entity<HeroItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Text).IsRequired().HasMaxLength(200);
+                entity.HasOne(e => e.Hero)
+                    .WithMany(h => h.Items)
+                    .HasForeignKey(e => e.HeroId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
-            // Seed contact data
-            ContactSeedData.SeedContacts(modelBuilder);
+            // Meeting configuration
+            modelBuilder.Entity<Meeting>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Description).IsRequired();
+                entity.Property(e => e.Images)
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                        v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>()
+                    )
+                    .HasColumnType("nvarchar(max)");
+                entity.HasOne(e => e.Ka2Project)
+                    .WithMany(k => k.Meetings)
+                    .HasForeignKey(e => e.Ka2ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
         }
     }
 }

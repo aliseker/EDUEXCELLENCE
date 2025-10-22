@@ -1,6 +1,8 @@
 using EduExcellence.Application.DTOs.Auth;
 using EduExcellence.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+// Rate limiting kaldırıldı
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EduExcellence.WebApi.Controllers
 {
@@ -22,6 +24,8 @@ namespace EduExcellence.WebApi.Controllers
         {
             try
             {
+                _logger.LogInformation("Login attempt from IP: {IP}", HttpContext.Connection.RemoteIpAddress);
+                
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(ModelState);

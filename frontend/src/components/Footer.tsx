@@ -125,8 +125,14 @@ const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">E</span>
+              <div className="h-8 w-8 rounded-lg overflow-hidden">
+                <Image
+                  src="/images/logo.jpg"
+                  alt="EduExcellence Logo"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="ml-2 text-xl font-bold">EduExcellence</span>
             </div>
