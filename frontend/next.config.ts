@@ -5,6 +5,12 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'localhost',
+        port: '7166',
+        pathname: '/uploads/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'www.edu-excellence.net',
         port: '',
         pathname: '/images/locations/**',

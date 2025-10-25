@@ -1,4 +1,3 @@
-using AutoMapper;
 using EduExcellence.Application.DTOs.Meeting;
 using EduExcellence.Application.Interfaces;
 using EduExcellence.Domain.Interfaces;
@@ -8,19 +7,26 @@ namespace EduExcellence.Application.Services
     public class MeetingService : IMeetingService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IMapper _mapper;
 
-        public MeetingService(IUnitOfWork unitOfWork, IMapper mapper)
+        public MeetingService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
-            _mapper = mapper;
         }
 
         public async Task<IEnumerable<MeetingDto>> GetMeetingsByProjectIdAsync(int ka2ProjectId)
         {
             var meetings = await _unitOfWork.Meetings.FindAsync(m => m.Ka2ProjectId == ka2ProjectId);
-            var meetingDtos = _mapper.Map<IEnumerable<MeetingDto>>(meetings);
-            return meetingDtos.OrderByDescending(m => m.CreatedAt);
+            return meetings.Select(m => new MeetingDto
+            {
+                Id = m.Id,
+                Title = m.Title,
+                Description = m.Description,
+                Images = m.Images ?? new List<string>(),
+                Ka2ProjectId = m.Ka2ProjectId,
+                CreatedAt = m.CreatedAt,
+                UpdatedAt = m.UpdatedAt,
+                IsActive = m.IsActive
+            }).OrderByDescending(m => m.CreatedAt);
         }
 
         public async Task<MeetingDto?> GetMeetingByIdAsync(int id)
@@ -28,33 +34,72 @@ namespace EduExcellence.Application.Services
             var meeting = await _unitOfWork.Meetings.GetByIdAsync(id);
             if (meeting == null) return null;
 
-            return _mapper.Map<MeetingDto>(meeting);
+            return new MeetingDto
+            {
+                Id = meeting.Id,
+                Title = meeting.Title,
+                Description = meeting.Description,
+                Images = meeting.Images ?? new List<string>(),
+                Ka2ProjectId = meeting.Ka2ProjectId,
+                CreatedAt = meeting.CreatedAt,
+                UpdatedAt = meeting.UpdatedAt,
+                IsActive = meeting.IsActive
+            };
         }
 
-        public async Task<MeetingDto> CreateMeetingAsync(MeetingDto meetingDto)
+        public async Task<MeetingDto> CreateMeetingAsync(CreateMeetingDto createMeetingDto)
         {
-            var meeting = _mapper.Map<Domain.Entities.Meeting>(meetingDto);
-            meeting.CreatedAt = DateTime.UtcNow;
+            var meeting = new Domain.Entities.Meeting
+            {
+                Title = createMeetingDto.Title,
+                Description = createMeetingDto.Description,
+                Images = createMeetingDto.Images ?? new List<string>(),
+                Ka2ProjectId = createMeetingDto.Ka2ProjectId,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
 
             await _unitOfWork.Meetings.AddAsync(meeting);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<MeetingDto>(meeting);
+            return new MeetingDto
+            {
+                Id = meeting.Id,
+                Title = meeting.Title,
+                Description = meeting.Description,
+                Images = meeting.Images,
+                Ka2ProjectId = meeting.Ka2ProjectId,
+                CreatedAt = meeting.CreatedAt,
+                UpdatedAt = meeting.UpdatedAt,
+                IsActive = meeting.IsActive
+            };
         }
 
-        public async Task<MeetingDto> UpdateMeetingAsync(MeetingDto meetingDto)
+        public async Task<MeetingDto> UpdateMeetingAsync(UpdateMeetingDto updateMeetingDto)
         {
-            var meeting = await _unitOfWork.Meetings.GetByIdAsync(meetingDto.Id);
+            var meeting = await _unitOfWork.Meetings.GetByIdAsync(updateMeetingDto.Id);
             if (meeting == null)
-                throw new KeyNotFoundException($"Meeting with ID {meetingDto.Id} not found");
+                throw new KeyNotFoundException($"Meeting with ID {updateMeetingDto.Id} not found");
 
-            _mapper.Map(meetingDto, meeting);
+            meeting.Title = updateMeetingDto.Title;
+            meeting.Description = updateMeetingDto.Description;
+            meeting.Images = updateMeetingDto.Images ?? new List<string>();
             meeting.UpdatedAt = DateTime.UtcNow;
 
             _unitOfWork.Meetings.Update(meeting);
             await _unitOfWork.SaveChangesAsync();
 
-            return _mapper.Map<MeetingDto>(meeting);
+            return new MeetingDto
+            {
+                Id = meeting.Id,
+                Title = meeting.Title,
+                Description = meeting.Description,
+                Images = meeting.Images,
+                Ka2ProjectId = meeting.Ka2ProjectId,
+                CreatedAt = meeting.CreatedAt,
+                UpdatedAt = meeting.UpdatedAt,
+                IsActive = meeting.IsActive
+            };
         }
 
         public async Task<bool> DeleteMeetingAsync(int id)

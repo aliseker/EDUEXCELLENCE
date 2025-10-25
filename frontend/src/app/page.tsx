@@ -7,6 +7,7 @@ import WhyChooseUs from '@/components/WhyChooseUs';
 import WhoWeAre from '@/components/WhoWeAre';
 import ReviewsSection from '@/components/ReviewsSection';
 import Footer from '@/components/Footer';
+import WhatsAppWidget from '@/components/WhatsAppWidget';
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
       <WhoWeAre />
       <ReviewsSection />
       <Footer />
+      <WhatsAppWidget />
     </div>
   );
 }

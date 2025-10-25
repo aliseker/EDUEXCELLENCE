@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import Image from 'next/image';
 
 interface Meeting {
   id: number;
@@ -40,14 +39,22 @@ export default function MeetingsPage() {
       if (!projectId) return;
 
       try {
+        console.log('Fetching meetings for project:', projectId);
         const response = await fetch(`https://localhost:7166/api/Meeting/project/${projectId}`);
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Meetings data:', data);
           setMeetings(data);
+          
           // Set first image of first meeting as selected
           if (data.length > 0 && data[0].images && data[0].images.length > 0) {
+            console.log('First meeting images:', data[0].images);
             setSelectedImage(data[0].images[0]);
           }
+        } else {
+          console.error('Failed to fetch meetings, status:', response.status);
         }
       } catch (error) {
         console.error('Error fetching meetings:', error);
@@ -163,112 +170,85 @@ export default function MeetingsPage() {
       )}
 
       {/* Main Content */}
-      <section className="py-16">
+      <section className="py-12 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {currentMeeting ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main Photo Gallery */}
-              <div className="lg:col-span-2">
-                {/* Selected Image */}
-                {selectedImage ? (
-                  <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                    <div className="relative h-[500px]">
-                      <Image
-                        src={selectedImage.startsWith('http') ? selectedImage : `https://localhost:7166${selectedImage}`}
-                        alt={currentMeeting.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-2xl shadow-lg p-12 text-center mb-6">
-                    <div className="text-6xl mb-4">📷</div>
-                    <p className="text-gray-600">No photos available for this meeting</p>
-                  </div>
-                )}
-
-                {/* Thumbnail Gallery */}
-                {currentMeeting.images && currentMeeting.images.length > 1 && (
-                  <div className="grid grid-cols-4 gap-4">
-                    {currentMeeting.images.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedImage(image)}
-                        className={`relative h-24 rounded-lg overflow-hidden border-4 transition-all ${
-                          selectedImage === image
-                            ? 'border-blue-600 scale-105'
-                            : 'border-transparent hover:border-blue-300'
-                        }`}
-                      >
-                        <Image
-                          src={image.startsWith('http') ? image : `https://localhost:7166${image}`}
-                          alt={`${currentMeeting.title} - ${index + 1}`}
-                          fill
-                          className="object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Sidebar - Description */}
-              <div className="lg:col-span-1">
-                <div className="bg-white rounded-2xl shadow-lg p-8 sticky top-8">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-6">{currentMeeting.title}</h2>
-                  
-                  {/* Description */}
-                  <div className="mb-6">
-                    <h3 className="text-sm font-semibold text-gray-500 uppercase mb-3">Description</h3>
-                    <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                      {currentMeeting.description}
-                    </div>
-                  </div>
-
-                  {/* Meeting Info */}
-                  <div className="border-t border-gray-200 pt-6 space-y-4">
-                    <div className="flex items-center text-gray-600">
-                      <svg className="w-5 h-5 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <div>
-                        <div className="text-xs text-gray-500">Created</div>
-                        <div className="font-medium">
-                          {new Date(currentMeeting.createdAt).toLocaleDateString('tr-TR')}
-                        </div>
-                      </div>
-                    </div>
-
-                    {currentMeeting.updatedAt && (
-                      <div className="flex items-center text-gray-600">
-                        <svg className="w-5 h-5 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <div>
-                          <div className="text-xs text-gray-500">Last Updated</div>
-                          <div className="font-medium">
-                            {new Date(currentMeeting.updatedAt).toLocaleDateString('tr-TR')}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center text-gray-600">
-                      <svg className="w-5 h-5 mr-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <div>
-                        <div className="text-xs text-gray-500">Photos</div>
-                        <div className="font-medium">
-                          {currentMeeting.images?.length || 0} Images
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <>
+              {/* Header Section */}
+              <div className="mb-6">
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+                  {currentMeeting.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
+                  <span className="flex items-center gap-1.5">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    {new Date(currentMeeting.createdAt).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </span>
+                  <span className="text-gray-300">•</span>
+                  <span>{currentMeeting.images?.length || 0} Photos</span>
                 </div>
               </div>
-            </div>
+
+              {/* Description */}
+              <div className="mb-8">
+                <p className="text-gray-600 text-base leading-relaxed whitespace-pre-wrap">
+                  {currentMeeting.description}
+                </p>
+              </div>
+
+              {/* Photo Gallery */}
+              {currentMeeting.images && currentMeeting.images.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Main Photo */}
+                  {selectedImage && (
+                    <div className="rounded-xl shadow-lg overflow-hidden">
+                      <img
+                        src={selectedImage.startsWith('http') ? selectedImage : `https://localhost:7166${selectedImage}`}
+                        alt={currentMeeting.title}
+                        className="w-full h-auto max-h-[600px] object-cover"
+                      />
+                    </div>
+                  )}
+
+                  {/* Photo Grid */}
+                  {currentMeeting.images.length > 1 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                      {currentMeeting.images.map((image, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setSelectedImage(image)}
+                          className={`relative aspect-square rounded-lg overflow-hidden transition-all ${
+                            selectedImage === image
+                              ? 'ring-2 ring-blue-500'
+                              : 'ring-1 ring-gray-200 hover:ring-blue-300'
+                          }`}
+                        >
+                          <img
+                            src={image.startsWith('http') ? image : `https://localhost:7166${image}`}
+                            alt={`Photo ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                  <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No photos yet</h3>
+                  <p className="text-gray-500">Photos will appear here when they are added to this meeting.</p>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">📅</div>

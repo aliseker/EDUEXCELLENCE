@@ -15,6 +15,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
         public DbSet<Blog> Blogs { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<ContactMessage> ContactMessages { get; set; }
+        public DbSet<WhatsAppSettings> WhatsAppSettings { get; set; }
         public DbSet<CourseLearningOutcome> CourseLearningOutcomes { get; set; }
         public DbSet<CourseDailyProgram> CourseDailyPrograms { get; set; }
         public DbSet<BlogImage> BlogImages { get; set; }
@@ -203,6 +204,15 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                     .WithMany(k => k.Meetings)
                     .HasForeignKey(e => e.Ka2ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // WhatsAppSettings configuration
+            modelBuilder.Entity<WhatsAppSettings>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.WelcomeMessage).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.IsEnabled).IsRequired();
             });
 
         }

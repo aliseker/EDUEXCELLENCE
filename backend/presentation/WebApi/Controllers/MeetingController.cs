@@ -50,14 +50,14 @@ namespace EduExcellence.WebApi.Controllers
 
         // POST: api/Meeting
         [HttpPost]
-        public async Task<ActionResult<MeetingDto>> CreateMeeting([FromBody] MeetingDto meetingDto)
+        public async Task<ActionResult<MeetingDto>> CreateMeeting([FromBody] CreateMeetingDto createMeetingDto)
         {
             try
             {
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var createdMeeting = await _meetingService.CreateMeetingAsync(meetingDto);
+                var createdMeeting = await _meetingService.CreateMeetingAsync(createMeetingDto);
                 return CreatedAtAction(nameof(GetMeeting), new { id = createdMeeting.Id }, createdMeeting);
             }
             catch (Exception ex)
@@ -68,17 +68,17 @@ namespace EduExcellence.WebApi.Controllers
 
         // PUT: api/Meeting/5
         [HttpPut("{id}")]
-        public async Task<ActionResult<MeetingDto>> UpdateMeeting(int id, [FromBody] MeetingDto meetingDto)
+        public async Task<ActionResult<MeetingDto>> UpdateMeeting(int id, [FromBody] UpdateMeetingDto updateMeetingDto)
         {
             try
             {
-                if (id != meetingDto.Id)
+                if (id != updateMeetingDto.Id)
                     return BadRequest("ID mismatch");
 
                 if (!ModelState.IsValid)
                     return BadRequest(ModelState);
 
-                var updatedMeeting = await _meetingService.UpdateMeetingAsync(meetingDto);
+                var updatedMeeting = await _meetingService.UpdateMeetingAsync(updateMeetingDto);
                 return Ok(updatedMeeting);
             }
             catch (KeyNotFoundException ex)
