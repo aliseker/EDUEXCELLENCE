@@ -248,39 +248,86 @@ export default function AdminHome() {
     container.style.transition = 'opacity 0.3s ease';
     
     setTimeout(() => {
-      container.innerHTML = `
-        <div class="mb-4">
-          <div class="flex items-center justify-between mb-3">
-            <label class="block text-sm font-medium text-gray-900">Daily Program</label>
-            <div class="flex items-center space-x-2">
-              <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full">${dayCount} days</span>
-            </div>
-          </div>
-          <p class="text-xs text-gray-600 mb-4 bg-gray-50 p-2 rounded-lg">
-            ✨ Program fields are automatically generated from duration. Enter details for each day.
-          </p>
-        </div>
-        <div id="dailyFields" class="space-y-3">
-          ${Array.from({ length: dayCount }, (_, i) => `
-            <div class="daily-field-item bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-all duration-200">
-              <div class="flex items-center justify-between mb-2">
-                <label class="text-sm font-semibold text-gray-900 flex items-center">
-                  <span class="w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-xs font-bold mr-2">${i + 1}</span>
-                  Day ${i + 1}
-                </label>
-                <span class="text-xs text-gray-500">${(existingProgram?.[i] || '').length > 0 ? '✅' : '⏳'}</span>
-              </div>
-              <textarea
-                name="day_${i + 1}"
-                rows="2"
-                placeholder="Enter Day ${i + 1} program details..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900 resize-none"
-                oninput="updateDayStatus(${i + 1}, this.value)"
-              >${existingProgram?.[i] || ''}</textarea>
-            </div>
-          `).join('')}
-        </div>
-      `;
+      // Clear container first
+      container.textContent = '';
+      
+      // Create header
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'mb-4';
+      
+      const headerFlex = document.createElement('div');
+      headerFlex.className = 'flex items-center justify-between mb-3';
+      
+      const label = document.createElement('label');
+      label.className = 'block text-sm font-medium text-gray-900';
+      label.textContent = 'Daily Program';
+      
+      const badgeContainer = document.createElement('div');
+      badgeContainer.className = 'flex items-center space-x-2';
+      
+      const badge = document.createElement('span');
+      badge.className = 'bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-1 rounded-full';
+      badge.textContent = `${dayCount} days`;
+      
+      badgeContainer.appendChild(badge);
+      headerFlex.appendChild(label);
+      headerFlex.appendChild(badgeContainer);
+      
+      const description = document.createElement('p');
+      description.className = 'text-xs text-gray-600 mb-4 bg-gray-50 p-2 rounded-lg';
+      description.textContent = '✨ Program fields are automatically generated from duration. Enter details for each day.';
+      
+      headerDiv.appendChild(headerFlex);
+      headerDiv.appendChild(description);
+      container.appendChild(headerDiv);
+      
+      // Create daily fields container
+      const dailyFieldsContainer = document.createElement('div');
+      dailyFieldsContainer.id = 'dailyFields';
+      dailyFieldsContainer.className = 'space-y-3';
+      
+      // Generate fields for each day
+      Array.from({ length: dayCount }, (_, i) => {
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'daily-field-item bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-all duration-200';
+        
+        const labelRow = document.createElement('div');
+        labelRow.className = 'flex items-center justify-between mb-2';
+        
+        const dayLabel = document.createElement('label');
+        dayLabel.className = 'text-sm font-semibold text-gray-900 flex items-center';
+        
+        const dayBadge = document.createElement('span');
+        dayBadge.className = 'w-6 h-6 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-xs font-bold mr-2';
+        dayBadge.textContent = `${i + 1}`;
+        
+        const dayText = document.createTextNode(`Day ${i + 1}`);
+        dayLabel.appendChild(dayBadge);
+        dayLabel.appendChild(dayText);
+        
+        const statusSpan = document.createElement('span');
+        statusSpan.className = 'text-xs text-gray-500';
+        statusSpan.textContent = (existingProgram?.[i] || '').length > 0 ? '✅' : '⏳';
+        
+        labelRow.appendChild(dayLabel);
+        labelRow.appendChild(statusSpan);
+        
+        const textarea = document.createElement('textarea');
+        textarea.name = `day_${i + 1}`;
+        textarea.rows = 2;
+        textarea.placeholder = `Enter Day ${i + 1} program details...`;
+        textarea.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900 resize-none';
+        textarea.value = existingProgram?.[i] || '';
+        textarea.oninput = function() {
+          (window as any).updateDayStatus(i + 1, (this as HTMLTextAreaElement).value);
+        };
+        
+        fieldDiv.appendChild(labelRow);
+        fieldDiv.appendChild(textarea);
+        dailyFieldsContainer.appendChild(fieldDiv);
+      });
+      
+      container.appendChild(dailyFieldsContainer);
       
       // Smooth animation için fade in
       container.style.opacity = '1';

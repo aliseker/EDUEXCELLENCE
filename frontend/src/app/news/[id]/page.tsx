@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -28,6 +28,14 @@ export default function NewsDetailPage() {
   const [newsItem, setNewsItem] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  
+  // DOMPurify only works in browser
+  const DOMPurify = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return require('dompurify');
+    }
+    return null;
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
@@ -219,7 +227,12 @@ export default function NewsDetailPage() {
                 </div>
                 <div 
                   className="prose prose-xl text-gray-700 leading-relaxed max-w-full break-words overflow-hidden"
-                  dangerouslySetInnerHTML={{ __html: newsItem.fullContent }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify ? DOMPurify.sanitize(newsItem.fullContent, {
+                      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre', 'span', 'div'],
+                      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style']
+                    }) : newsItem.fullContent
+                  }}
                 />
               </div>
             </div>

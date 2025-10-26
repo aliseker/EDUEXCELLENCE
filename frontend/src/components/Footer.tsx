@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 interface Contact {
   id: number;
@@ -28,6 +28,14 @@ const Footer = () => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [socialMedias, setSocialMedias] = useState<SocialMedia[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // DOMPurify only works in browser
+  const DOMPurify = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return require('dompurify');
+    }
+    return null;
+  }, []);
 
   // Fetch contacts from API
   const fetchContacts = async () => {
@@ -226,7 +234,12 @@ const Footer = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <div>
-                  <p className="text-gray-300 text-sm" dangerouslySetInnerHTML={{ __html: addressDetails }} />
+                  <p className="text-gray-300 text-sm" dangerouslySetInnerHTML={{ 
+                    __html: DOMPurify ? DOMPurify.sanitize(addressDetails, {
+                      ALLOWED_TAGS: ['br', 'strong', 'em', 'span'],
+                      ALLOWED_ATTR: []
+                    }) : addressDetails
+                  }} />
                 </div>
               </div>
               <div className="flex items-center space-x-3">
