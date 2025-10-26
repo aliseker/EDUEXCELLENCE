@@ -57,7 +57,17 @@ namespace EduExcellence.WebApi.Controllers
                 _rateLimitService.Clear($"login_email_{request.Email}");
                 
                 _logger.LogInformation("Admin {Email} logged in successfully", request.Email);
-                return Ok(result);
+                
+                // Return tokens in response body for localStorage
+                return Ok(new 
+                { 
+                    accessToken = result.Token,
+                    refreshToken = result.RefreshToken,
+                    expiresAt = result.ExpiresAt,
+                    refreshTokenExpiresAt = result.RefreshTokenExpiresAt,
+                    expiresIn = 600, // 10 minutes in seconds
+                    admin = result.Admin
+                });
             }
             catch (Exception ex)
             {
@@ -83,11 +93,52 @@ namespace EduExcellence.WebApi.Controllers
             return ipAddress ?? "unknown";
         }
 
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.RefreshToken))
+                {
+                    return BadRequest(new { message = "Refresh token is required" });
+                }
+
+                var result = await _authService.RefreshAccessTokenAsync(request.RefreshToken);
+                
+                if (result == null)
+                {
+                    return Unauthorized(new { message = "Invalid or expired refresh token" });
+                }
+
+                _logger.LogInformation("Access token refreshed successfully");
+                
+                return Ok(new 
+                { 
+                    accessToken = result.Token,
+                    refreshToken = result.RefreshToken,
+                    expiresAt = result.ExpiresAt,
+                    refreshTokenExpiresAt = result.RefreshTokenExpiresAt,
+                    expiresIn = 600, // 10 minutes in seconds
+                    admin = result.Admin
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing token");
+                return StatusCode(500, new { message = "An error occurred while refreshing token" });
+            }
+        }
+
         [HttpPost("validate")]
         public async Task<IActionResult> ValidateToken([FromBody] string token)
         {
             try
             {
+                if (string.IsNullOrEmpty(token))
+                {
+                    return BadRequest(new { message = "Token is required" });
+                }
+
                 var isValid = await _authService.ValidateTokenAsync(token);
                 
                 if (!isValid)
@@ -106,11 +157,16 @@ namespace EduExcellence.WebApi.Controllers
         }
 
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody] string token)
+        public async Task<IActionResult> Logout([FromBody] string? token)
         {
             try
             {
-                await _authService.LogoutAsync(token);
+                if (!string.IsNullOrEmpty(token))
+                {
+                    await _authService.LogoutAsync(token);
+                }
+                
+                _logger.LogInformation("User logged out successfully");
                 return Ok(new { message = "Logged out successfully" });
             }
             catch (Exception ex)

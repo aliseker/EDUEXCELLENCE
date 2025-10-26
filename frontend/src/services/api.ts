@@ -6,21 +6,24 @@ class ApiService {
     this.baseURL = 'https://localhost:7166/api';
     // Get token from localStorage on initialization
     if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('adminToken');
+      this.token = localStorage.getItem('accessToken');
     }
   }
 
   setToken(token: string) {
     this.token = token;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('adminToken', token);
+      localStorage.setItem('accessToken', token);
     }
   }
 
   clearToken() {
     this.token = null;
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('adminToken');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('adminData');
+      localStorage.removeItem('adminLoggedIn');
     }
   }
 
@@ -32,7 +35,7 @@ class ApiService {
     
     // Her istekte token'ı localStorage'dan al
     const currentToken = typeof window !== 'undefined' 
-      ? localStorage.getItem('adminToken') 
+      ? localStorage.getItem('accessToken') 
       : this.token;
     
     const config: RequestInit = {

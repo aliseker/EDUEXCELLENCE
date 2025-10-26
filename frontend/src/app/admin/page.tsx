@@ -26,10 +26,17 @@ export default function AdminLogin() {
 
       if (response.ok) {
         const data = await response.json();
-        // Token'ı localStorage'a kaydet
-        localStorage.setItem('adminToken', data.token);
+        
+        // Store tokens in localStorage
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
         localStorage.setItem('adminData', JSON.stringify(data.admin));
         localStorage.setItem('adminLoggedIn', 'true');
+        
+        // Initialize tokenManager with new tokens
+        const { tokenManager } = await import('@/utils/tokenManager');
+        tokenManager.setTokens(data.accessToken, data.refreshToken, data.expiresIn);
+        
         router.push('/admin/home');
       } else {
         const errorData = await response.json();

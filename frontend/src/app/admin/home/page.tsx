@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { authenticatedFetch } from '@/utils/authenticatedFetch';
 
 export default function AdminHome() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -123,36 +124,36 @@ export default function AdminHome() {
   useEffect(() => {
     const checkAuth = async () => {
       const adminAuth = localStorage.getItem('adminLoggedIn');
-      const token = localStorage.getItem('adminToken');
+      const accessToken = localStorage.getItem('accessToken');
       
-      if (adminAuth === 'true' && token) {
+      if (adminAuth === 'true' && accessToken) {
         try {
-          // Validate token with backend
-          const response = await fetch('https://localhost:7166/api/auth/validate', {
+          // Validate access token with backend
+          const response = await authenticatedFetch('https://localhost:7166/api/auth/validate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
             },
-            body: JSON.stringify(token),
+            body: JSON.stringify(accessToken),
           });
 
           if (response.ok) {
             setIsAuthenticated(true);
           } else {
-            // Token invalid, clear storage and redirect
-            localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminData');
-            localStorage.removeItem('adminLoggedIn');
-            router.push('/admin');
+            // Token invalid, try to refresh
+            const { tokenManager } = await import('@/utils/tokenManager');
+            try {
+              await tokenManager.refreshAccessToken();
+              setIsAuthenticated(true);
+            } catch {
+              // Refresh failed, logout
+              tokenManager.logout();
+            }
           }
         } catch (error) {
           console.error('Token validation error:', error);
-          // Network error, clear storage and redirect
-          localStorage.removeItem('adminToken');
-          localStorage.removeItem('adminData');
-          localStorage.removeItem('adminLoggedIn');
-          router.push('/admin');
+          const { tokenManager } = await import('@/utils/tokenManager');
+          tokenManager.logout();
         }
       } else {
         router.push('/admin');
@@ -167,7 +168,7 @@ export default function AdminHome() {
   const fetchData = async () => {
     try {
       // Fetch blogs
-      const blogsResponse = await fetch('https://localhost:7166/api/Blogs');
+      const blogsResponse = await authenticatedFetch('https://localhost:7166/api/Blogs');
       if (blogsResponse.ok) {
         const blogsData = await blogsResponse.json();
         // Sort by date descending (newest first)
@@ -178,7 +179,7 @@ export default function AdminHome() {
       }
 
       // Fetch courses
-        const coursesResponse = await fetch('https://localhost:7166/api/Courses');
+        const coursesResponse = await authenticatedFetch('https://localhost:7166/api/Courses');
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
         // Sort by date descending (newest first)
@@ -191,7 +192,7 @@ export default function AdminHome() {
       }
 
       // Fetch KA2 projects
-      const ka2Response = await fetch('https://localhost:7166/api/Ka2');
+      const ka2Response = await authenticatedFetch('https://localhost:7166/api/Ka2');
       if (ka2Response.ok) {
         const ka2Data = await ka2Response.json();
         // Sort by date descending (newest first)
@@ -202,11 +203,7 @@ export default function AdminHome() {
       }
 
       // Fetch contacts
-      const contactsResponse = await fetch('https://localhost:7166/api/Contact', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
-        }
-      });
+      const contactsResponse = await authenticatedFetch('https://localhost:7166/api/Contact');
       if (contactsResponse.ok) {
         const contactsData = await contactsResponse.json();
         
@@ -221,7 +218,7 @@ export default function AdminHome() {
       }
 
       // Fetch WhatsApp settings
-      const whatsappResponse = await fetch('https://localhost:7166/api/Settings/whatsapp');
+      const whatsappResponse = await authenticatedFetch('https://localhost:7166/api/Settings/whatsapp');
       if (whatsappResponse.ok) {
         const whatsappData = await whatsappResponse.json();
         setWhatsappSettings(whatsappData);
@@ -449,11 +446,10 @@ export default function AdminHome() {
       ];
 
       // API çağrısı
-      const response = await fetch('https://localhost:7166/api/Contact/bulk-update', {
+      const response = await authenticatedFetch('https://localhost:7166/api/Contact/bulk-update', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(contactsToUpdate)
       });
@@ -540,17 +536,10 @@ export default function AdminHome() {
     }
 
     try {
-      const token = localStorage.getItem('adminToken');
-      if (!token) {
-        toast.error('Oturum süresi dolmuş. Lütfen tekrar giriş yapın.');
-        return;
-      }
-
-      const response = await fetch('https://localhost:7166/api/auth/change-password', {
+      const response = await authenticatedFetch('https://localhost:7166/api/auth/change-password', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           currentPassword,
@@ -628,18 +617,13 @@ export default function AdminHome() {
       title,
       message,
       async () => {
-        const token = localStorage.getItem('adminToken');
-        
         try {
           switch (type) {
             case 'blog':
               console.log('Deleting blog with id:', id);
               
-              const blogResponse = await fetch(`https://localhost:7166/api/Blogs/${id}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
+              const blogResponse = await authenticatedFetch(`https://localhost:7166/api/Blogs/${id}`, {
+                method: 'DELETE'
               });
               
               console.log('Blog delete response status:', blogResponse.status);
@@ -659,11 +643,8 @@ export default function AdminHome() {
             case 'ka1course':
               console.log('Deleting course with id:', id);
               
-              const courseResponse = await fetch(`https://localhost:7166/api/Courses/${id}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
+              const courseResponse = await authenticatedFetchCourse(`https://localhost:7166/api/Courses/${id}`, {
+                method: 'DELETE'
               });
               
               console.log('Delete response status:', courseResponse.status);
@@ -684,11 +665,8 @@ export default function AdminHome() {
             case 'ka2project':
               console.log('Deleting KA2 project with id:', id);
               
-              const ka2Response = await fetch(`https://localhost:7166/api/Ka2/${id}`, {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
+              const ka2Response = await authenticatedFetchKa2(`https://localhost:7166/api/Ka2/${id}`, {
+                method: 'DELETE'
               });
               
               console.log('KA2 delete response status:', ka2Response.status);
@@ -716,13 +694,6 @@ export default function AdminHome() {
 
   const handleSave = async (type: string, data: any, e?: React.FormEvent) => {
     console.log('handleSave called with type:', type, 'data:', data);
-    const token = localStorage.getItem('adminToken');
-    
-    if (!token) {
-      console.error('No admin token found');
-      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
-      return;
-    }
     
     try {
       switch (type) {
@@ -861,11 +832,10 @@ export default function AdminHome() {
             const updateData = { ...blogData, id: editingItem.id };
             console.log('Updating blog with data:', updateData);
             
-            const response = await fetch(`https://localhost:7166/api/Blogs/${editingItem.id}`, {
+            const response = await authenticatedFetch(`https://localhost:7166/api/Blogs/${editingItem.id}`, {
               method: 'PUT',
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify(updateData)
             });
@@ -882,11 +852,10 @@ export default function AdminHome() {
               alert('Blog update failed: ' + errorText);
             }
           } else {
-            const response = await fetch('https://localhost:7166/api/Blogs', {
+            const response = await authenticatedFetch('https://localhost:7166/api/Blogs', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify(blogData)
             });
@@ -956,11 +925,10 @@ export default function AdminHome() {
             console.log('StartDate type:', typeof updateData.startDate, 'Value:', updateData.startDate);
             console.log('EndDate type:', typeof updateData.endDate, 'Value:', updateData.endDate);
             
-            const response = await fetch(`https://localhost:7166/api/Courses/${editingItem.id}`, {
+            const response = await authenticatedFetch(`https://localhost:7166/api/Courses/${editingItem.id}`, {
               method: 'PUT',
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify(updateData)
             });
@@ -983,11 +951,10 @@ export default function AdminHome() {
             }
           } else {
             console.log('Creating course with data:', courseData);
-            const response = await fetch('https://localhost:7166/api/Courses', {
+            const response = await authenticatedFetch('https://localhost:7166/api/Courses', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify(courseData)
             });
@@ -1027,11 +994,10 @@ export default function AdminHome() {
             const updateData = { ...projectData, id: editingItem.id };
             console.log('Updating KA2 project with data:', updateData);
             
-            const response = await fetch(`https://localhost:7166/api/Ka2/${editingItem.id}`, {
+            const response = await authenticatedFetch(`https://localhost:7166/api/Ka2/${editingItem.id}`, {
               method: 'PUT',
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify(updateData)
             });
@@ -1048,11 +1014,10 @@ export default function AdminHome() {
               alert('KA2 update failed: ' + errorText);
             }
           } else {
-            const response = await fetch('https://localhost:7166/api/Ka2', {
+            const response = await authenticatedFetch('https://localhost:7166/api/Ka2', {
               method: 'POST',
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
+                'Content-Type': 'application/json'
               },
               body: JSON.stringify(projectData)
             });
@@ -1089,7 +1054,7 @@ export default function AdminHome() {
     setShowMeetingModal(true);
     
     try {
-      const response = await fetch(`https://localhost:7166/api/Meeting/project/${projectId}`);
+      const response = await authenticatedFetch(`https://localhost:7166/api/Meeting/project/${projectId}`);
       if (response.ok) {
         const meetings = await response.json();
         setCurrentProjectMeetings(meetings);
@@ -1183,12 +1148,8 @@ export default function AdminHome() {
           imageFormData.append('files', file);
         });
 
-        const token = localStorage.getItem('adminToken');
-        const uploadResponse = await fetch('https://localhost:7166/api/Upload/multiple', {
+        const uploadResponse = await authenticatedFetch('https://localhost:7166/api/Upload/multiple', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
           body: imageFormData,
         });
 
@@ -1228,12 +1189,10 @@ export default function AdminHome() {
           images: allImages
         };
 
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`https://localhost:7166/api/Meeting/${editingMeeting.id}`, {
+        const response = await authenticatedFetch(`https://localhost:7166/api/Meeting/${editingMeeting.id}`, {
           method: 'PUT',
           headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(updateData),
         });
@@ -1261,12 +1220,10 @@ export default function AdminHome() {
           ka2ProjectId: selectedProjectId
         };
 
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch('https://localhost:7166/api/Meeting', {
+        const response = await authenticatedFetch('https://localhost:7166/api/Meeting', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(createData),
         });
@@ -1309,12 +1266,8 @@ export default function AdminHome() {
       'Bu meeting\'i silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
       async () => {
         try {
-          const token = localStorage.getItem('adminToken');
-          const response = await fetch(`https://localhost:7166/api/Meeting/${meetingId}`, {
+          const response = await authenticatedFetch(`https://localhost:7166/api/Meeting/${meetingId}`, {
             method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
           });
 
           if (response.ok) {
@@ -1339,7 +1292,7 @@ export default function AdminHome() {
     setShowDisseminationModal(true);
     
     try {
-      const response = await fetch(`https://localhost:7166/api/Dissemination/project/${projectId}`);
+      const response = await authenticatedFetch(`https://localhost:7166/api/Dissemination/project/${projectId}`);
       if (response.ok) {
         const disseminations = await response.json();
         setCurrentProjectDisseminations(disseminations);
@@ -1422,12 +1375,8 @@ export default function AdminHome() {
           imageFormData.append('files', file);
         });
 
-        const token = localStorage.getItem('adminToken');
-        const uploadResponse = await fetch('https://localhost:7166/api/Upload/multiple', {
+        const uploadResponse = await authenticatedFetch('https://localhost:7166/api/Upload/multiple', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
           body: imageFormData,
         });
 
@@ -1462,12 +1411,10 @@ export default function AdminHome() {
           images: allImages
         };
 
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`https://localhost:7166/api/Dissemination/${editingDissemination.id}`, {
+        const response = await authenticatedFetch(`https://localhost:7166/api/Dissemination/${editingDissemination.id}`, {
           method: 'PUT',
           headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(updateData),
         });
@@ -1494,12 +1441,10 @@ export default function AdminHome() {
           ka2ProjectId: selectedDisseminationProjectId
         };
 
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch('https://localhost:7166/api/Dissemination', {
+        const response = await authenticatedFetch('https://localhost:7166/api/Dissemination', {
           method: 'POST',
           headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify(createData),
         });
@@ -1529,12 +1474,8 @@ export default function AdminHome() {
       'Bu dissemination\'ı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
       async () => {
         try {
-          const token = localStorage.getItem('adminToken');
-          const response = await fetch(`https://localhost:7166/api/Dissemination/${disseminationId}`, {
+          const response = await authenticatedFetch(`https://localhost:7166/api/Dissemination/${disseminationId}`, {
             method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
           });
 
           if (response.ok) {
@@ -1564,7 +1505,7 @@ export default function AdminHome() {
     };
 
     try {
-      const response = await fetch('https://localhost:7166/api/Settings/whatsapp', {
+      const response = await authenticatedFetch('https://localhost:7166/api/Settings/whatsapp', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)

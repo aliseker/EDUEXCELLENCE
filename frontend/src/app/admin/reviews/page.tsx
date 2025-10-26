@@ -66,10 +66,10 @@ export default function ReviewsManagement() {
   }, []);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('adminToken');
+    const accessToken = localStorage.getItem('accessToken');
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
     
-    if (!token || isLoggedIn !== 'true') {
+    if (!accessToken || isLoggedIn !== 'true') {
       router.push('/admin');
       return;
     }
@@ -81,7 +81,7 @@ export default function ReviewsManagement() {
 
   const fetchReviews = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch('https://localhost:7166/api/Review', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -110,7 +110,7 @@ export default function ReviewsManagement() {
     setIsSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('accessToken');
       const url = editingReview 
         ? `https://localhost:7166/api/Review/${editingReview.id}`
         : 'https://localhost:7166/api/Review';
@@ -203,7 +203,7 @@ export default function ReviewsManagement() {
       'Bu yorumu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
       async () => {
         try {
-          const token = localStorage.getItem('adminToken');
+          const token = localStorage.getItem('accessToken');
           const response = await fetch(`https://localhost:7166/api/Review/${id}`, {
             method: 'DELETE',
             headers: {

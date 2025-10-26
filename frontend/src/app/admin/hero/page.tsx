@@ -55,14 +55,20 @@ export default function HeroManagement() {
   const [deleteTarget, setDeleteTarget] = useState<{type: string, id: number} | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      router.push('/admin');
-    } else {
-      setIsAuthenticated(true);
-      setIsLoading(false);
-      fetchHeroes();
-    }
+    const checkAuth = async () => {
+      const accessToken = localStorage.getItem('accessToken');
+      const adminAuth = localStorage.getItem('adminLoggedIn');
+      
+      if (!accessToken || adminAuth !== 'true') {
+        router.push('/admin');
+      } else {
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        fetchHeroes();
+      }
+    };
+    
+    checkAuth();
   }, [router]);
 
   const fetchHeroes = async () => {
@@ -244,7 +250,10 @@ export default function HeroManagement() {
   };
 
   const confirmLogout = () => {
-    localStorage.removeItem('adminToken');
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('adminData');
+    localStorage.removeItem('adminLoggedIn');
     router.push('/admin');
     setShowDeleteConfirm(false);
     setDeleteTarget(null);

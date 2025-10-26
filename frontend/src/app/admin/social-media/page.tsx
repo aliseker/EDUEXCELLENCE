@@ -73,10 +73,10 @@ export default function SocialMediaManagement() {
   }, []);
 
   const checkAuth = () => {
-    const token = localStorage.getItem('adminToken');
+    const accessToken = localStorage.getItem('accessToken');
     const isLoggedIn = localStorage.getItem('adminLoggedIn');
     
-    if (!token || isLoggedIn !== 'true') {
+    if (!accessToken || isLoggedIn !== 'true') {
       router.push('/admin');
       return;
     }
@@ -88,7 +88,7 @@ export default function SocialMediaManagement() {
 
   const fetchSocialMedias = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch('https://localhost:7166/api/socialmedia', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -113,7 +113,7 @@ export default function SocialMediaManagement() {
     setIsSaving(true);
 
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('accessToken');
       const url = editingItem 
         ? `https://localhost:7166/api/socialmedia/${editingItem.id}`
         : 'https://localhost:7166/api/socialmedia';
@@ -169,7 +169,7 @@ export default function SocialMediaManagement() {
       'Bu sosyal medya linkini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
       async () => {
         try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`https://localhost:7166/api/socialmedia/${id}`, {
         method: 'DELETE',
         headers: {
@@ -196,7 +196,7 @@ export default function SocialMediaManagement() {
 
   const handleToggleActive = async (id: number) => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`https://localhost:7166/api/socialmedia/${id}/toggle-active`, {
         method: 'PATCH',
         headers: {

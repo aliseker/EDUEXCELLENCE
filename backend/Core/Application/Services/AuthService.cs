@@ -38,13 +38,20 @@ namespace EduExcellence.Application.Services
             await _unitOfWork.Admins.UpdateAsync(admin);
             await _unitOfWork.SaveChangesAsync();
 
-            var token = GenerateJwtToken(admin);
-            var expiresAt = DateTime.UtcNow.AddMinutes(GetJwtExpiryMinutes());
+            // Generate Access Token (10 minutes)
+            var accessToken = GenerateAccessToken(admin);
+            var accessTokenExpiresAt = DateTime.UtcNow.AddMinutes(10);
+
+            // Generate Refresh Token (30 days)
+            var refreshToken = GenerateRefreshToken(admin);
+            var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
 
             return new LoginResponseDto
             {
-                Token = token,
-                ExpiresAt = expiresAt,
+                Token = accessToken,
+                RefreshToken = refreshToken,
+                ExpiresAt = accessTokenExpiresAt,
+                RefreshTokenExpiresAt = refreshTokenExpiresAt,
                 Admin = new AdminDto
                 {
                     Id = admin.Id,
@@ -152,6 +159,127 @@ namespace EduExcellence.Application.Services
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        private string GenerateAccessToken(Admin admin)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(GetJwtSecretKey());
+            
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("adminId", admin.Id.ToString()),
+                    new Claim("email", admin.Email),
+                    new Claim("firstName", admin.FirstName),
+                    new Claim("lastName", admin.LastName),
+                    new Claim("isSuperAdmin", admin.IsSuperAdmin.ToString()),
+                    new Claim(ClaimTypes.Role, admin.IsSuperAdmin ? "SuperAdmin" : "Admin"),
+                    new Claim("tokenType", "access")
+                }),
+                Expires = DateTime.UtcNow.AddMinutes(10), // 10 minutes
+                Issuer = GetJwtIssuer(),
+                Audience = GetJwtAudience(),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        private string GenerateRefreshToken(Admin admin)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(GetJwtSecretKey());
+            
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim("adminId", admin.Id.ToString()),
+                    new Claim("email", admin.Email),
+                    new Claim("tokenType", "refresh")
+                }),
+                Expires = DateTime.UtcNow.AddDays(30), // 30 days
+                Issuer = GetJwtIssuer(),
+                Audience = GetJwtAudience(),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        public async Task<LoginResponseDto?> RefreshAccessTokenAsync(string refreshToken)
+        {
+            try
+            {
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var key = Encoding.UTF8.GetBytes(GetJwtSecretKey());
+                
+                var validationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = GetJwtIssuer(),
+                    ValidateAudience = true,
+                    ValidAudience = GetJwtAudience(),
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                var principal = tokenHandler.ValidateToken(refreshToken, validationParameters, out SecurityToken validatedToken);
+                
+                // Check if it's a refresh token
+                var tokenTypeClaim = principal.Claims.FirstOrDefault(x => x.Type == "tokenType");
+                if (tokenTypeClaim?.Value != "refresh")
+                {
+                    return null;
+                }
+
+                // Get admin from token
+                var adminIdClaim = principal.Claims.FirstOrDefault(x => x.Type == "adminId");
+                if (adminIdClaim == null || !int.TryParse(adminIdClaim.Value, out int adminId))
+                {
+                    return null;
+                }
+
+                var admin = await _unitOfWork.Admins.GetByIdAsync(adminId);
+                if (admin == null || !admin.IsActive)
+                {
+                    return null;
+                }
+
+                // Generate new tokens
+                var newAccessToken = GenerateAccessToken(admin);
+                var newRefreshToken = GenerateRefreshToken(admin);
+                var accessTokenExpiresAt = DateTime.UtcNow.AddMinutes(10);
+                var refreshTokenExpiresAt = DateTime.UtcNow.AddDays(30);
+
+                return new LoginResponseDto
+                {
+                    Token = newAccessToken,
+                    RefreshToken = newRefreshToken,
+                    ExpiresAt = accessTokenExpiresAt,
+                    RefreshTokenExpiresAt = refreshTokenExpiresAt,
+                    Admin = new AdminDto
+                    {
+                        Id = admin.Id,
+                        Email = admin.Email,
+                        FirstName = admin.FirstName,
+                        LastName = admin.LastName,
+                        PhoneNumber = admin.PhoneNumber,
+                        IsSuperAdmin = admin.IsSuperAdmin,
+                        LastLoginAt = admin.LastLoginAt
+                    }
+                };
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         private string GetJwtSecretKey()
