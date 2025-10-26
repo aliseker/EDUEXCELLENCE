@@ -141,24 +141,10 @@ namespace EduExcellence.WebApi.Controllers
         {
             try
             {
-                // Direkt SQL connection string ile hard delete - kesin çözüm
-                var connectionString = HttpContext.RequestServices
-                    .GetRequiredService<IConfiguration>()
-                    .GetConnectionString("DefaultConnection");
+                // Use service layer instead of raw SQL for proper entity tracking and soft delete
+                var result = await _ka2Service.DeleteProjectAsync(id);
                 
-                using var connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
-                await connection.OpenAsync();
-                
-                // Hard delete - veritabanından tamamen kaldır
-                using var command = new Microsoft.Data.SqlClient.SqlCommand(
-                    "DELETE FROM Ka2Projects WHERE Id = @id", connection);
-                command.Parameters.AddWithValue("@id", id);
-                
-                var result = await command.ExecuteNonQueryAsync();
-                
-                _logger.LogInformation($"Hard delete executed for KA2 project {id}, affected rows: {result}");
-                
-                if (result == 0)
+                if (!result)
                 {
                     return NotFound(new { message = "KA2 project not found" });
                 }

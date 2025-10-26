@@ -11,10 +11,12 @@ namespace EduExcellence.WebApi.Controllers
     public class SettingsController : ControllerBase
     {
         private readonly EduExcellenceDbContext _context;
+        private readonly ILogger<SettingsController> _logger;
 
-        public SettingsController(EduExcellenceDbContext context)
+        public SettingsController(EduExcellenceDbContext context, ILogger<SettingsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet("whatsapp")]
@@ -86,7 +88,8 @@ namespace EduExcellence.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error occurred while processing request");
+                return StatusCode(500, new { message = "An error occurred while processing your request" });
             }
         }
     }

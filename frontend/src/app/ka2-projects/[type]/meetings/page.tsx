@@ -24,6 +24,7 @@ export default function MeetingsPage() {
   const [projectId, setProjectId] = useState<number | null>(null);
   const [currentMeetingIndex, setCurrentMeetingIndex] = useState(0);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isAutoPlay, setIsAutoPlay] = useState(true);
 
   // Get project ID from URL query or fetch from project type
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function MeetingsPage() {
 
       try {
         console.log('Fetching meetings for project:', projectId);
-        const response = await fetch(`https://localhost:7166/api/Meeting/project/${projectId}`);
+        const response = await fetch('https://localhost:7166/api/Meeting/project/' + projectId);
         console.log('Response status:', response.status);
         
         if (response.ok) {
@@ -75,6 +76,22 @@ export default function MeetingsPage() {
       setSelectedImage(null);
     }
   }, [currentMeetingIndex, meetings]);
+
+  // Auto-play slideshow
+  useEffect(() => {
+    const currentMeet = meetings[currentMeetingIndex];
+    if (!isAutoPlay || !currentMeet || !currentMeet.images || currentMeet.images.length <= 1) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const currentIndex = currentMeet.images.findIndex(img => img === selectedImage);
+      const nextIndex = (currentIndex + 1) % currentMeet.images.length;
+      setSelectedImage(currentMeet.images[nextIndex]);
+    }, 3000); // 3 saniyede bir değişir
+
+    return () => clearInterval(interval);
+  }, [isAutoPlay, selectedImage, meetings, currentMeetingIndex]);
 
   if (loading) {
     return (
@@ -170,7 +187,7 @@ export default function MeetingsPage() {
       )}
 
       {/* Main Content */}
-      <section className="py-12 bg-gray-50">
+      <section className="py-12 pb-24 bg-gray-50 min-h-screen">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {currentMeeting ? (
             <>
@@ -204,38 +221,59 @@ export default function MeetingsPage() {
 
               {/* Photo Gallery */}
               {currentMeeting.images && currentMeeting.images.length > 0 ? (
-                <div className="space-y-4">
-                  {/* Main Photo */}
-                  {selectedImage && (
-                    <div className="rounded-xl shadow-lg overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-start gap-4">
+                  {/* Main Photo - Sol Taraf */}
+                  <div className="flex-1">
+                    {selectedImage && (
                       <img
-                        src={selectedImage.startsWith('http') ? selectedImage : `https://localhost:7166${selectedImage}`}
+                        src={selectedImage.startsWith('http') ? selectedImage : 'https://localhost:7166' + selectedImage}
                         alt={currentMeeting.title}
-                        className="w-full h-auto max-h-[600px] object-cover"
+                        className="w-full h-auto max-h-[500px] object-cover rounded-xl shadow-lg"
                       />
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  {/* Photo Grid */}
+                  {/* Photo Grid - Sağ Taraf */}
                   {currentMeeting.images.length > 1 && (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-                      {currentMeeting.images.map((image, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setSelectedImage(image)}
-                          className={`relative aspect-square rounded-lg overflow-hidden transition-all ${
-                            selectedImage === image
-                              ? 'ring-2 ring-blue-500'
-                              : 'ring-1 ring-gray-200 hover:ring-blue-300'
-                          }`}
-                        >
-                          <img
-                            src={image.startsWith('http') ? image : `https://localhost:7166${image}`}
-                            alt={`Photo ${index + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
+                    <div className={`${
+                      currentMeeting.images.length >= 2 && currentMeeting.images.length <= 4 
+                        ? 'w-full md:w-40 md:h-[500px]' 
+                        : 'w-full md:w-52'
+                    }`}>
+                      <div className={`grid gap-2 ${
+                        currentMeeting.images.length >= 2 && currentMeeting.images.length <= 4 
+                          ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-1 md:h-full md:auto-rows-fr' 
+                          : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-2'
+                      } ${
+                        currentMeeting.images.length > 8 
+                          ? 'max-h-[500px] overflow-y-auto pr-2 custom-scrollbar' 
+                          : ''
+                      }`}>
+                        {currentMeeting.images.map((image, index) => (
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setSelectedImage(image);
+                              setIsAutoPlay(false);
+                            }}
+                            className={`relative rounded-lg overflow-hidden transition-all ${
+                              currentMeeting.images.length >= 2 && currentMeeting.images.length <= 4 
+                                ? 'w-full md:h-full' 
+                                : 'aspect-square'
+                            } ${
+                              selectedImage === image
+                                ? 'ring-2 ring-blue-500 scale-95'
+                                : 'ring-1 ring-gray-200 hover:ring-blue-300 hover:scale-105'
+                            }`}
+                          >
+                            <img
+                              src={image.startsWith('http') ? image : 'https://localhost:7166' + image}
+                              alt={`Photo ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

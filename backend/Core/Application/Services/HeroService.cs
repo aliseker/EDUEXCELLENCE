@@ -19,7 +19,7 @@ namespace EduExcellence.Application.Services
 
         public async Task<HeroDto?> GetActiveHeroAsync()
         {
-            var hero = await _unitOfWork.HeroRepository.GetActiveHeroAsync();
+            var hero = await _unitOfWork.HeroRepository.GetDisplayedHeroAsync();
             return hero != null ? _mapper.Map<HeroDto>(hero) : null;
         }
 
@@ -39,12 +39,10 @@ namespace EduExcellence.Application.Services
         {
             var hero = _mapper.Map<Hero>(createHeroDto);
             
-            // Eğer ilk hero ise, otomatik olarak aktif yap
-            var existingHeroes = await _unitOfWork.HeroRepository.GetAllAsync();
-            if (!existingHeroes.Any())
-            {
-                hero.IsActive = true;
-            }
+            // Yeni hero her zaman pasif olarak kaydedilir
+            // Admin daha sonra isterse anasayfada gösterebilir
+            hero.IsDisplayedOnHomepage = false;
+            hero.IsActive = true; // Soft delete için aktif
 
             await _unitOfWork.HeroRepository.AddAsync(hero);
             await _unitOfWork.SaveChangesAsync();
@@ -90,19 +88,19 @@ namespace EduExcellence.Application.Services
         public async Task<bool> SetActiveHeroAsync(int id)
         {
             var hero = await _unitOfWork.HeroRepository.GetByIdAsync(id);
-            if (hero == null)
+            if (hero == null || !hero.IsActive) // Silinmiş hero aktif yapılamaz
                 return false;
 
-            // Tüm hero'ları pasif yap
+            // Tüm hero'ların anasayfa gösterimini kapat
             var allHeroes = await _unitOfWork.HeroRepository.GetAllAsync();
-            foreach (var h in allHeroes)
+            foreach (var h in allHeroes.Where(h => h.IsActive)) // Sadece silinmemiş olanlar
             {
-                h.IsActive = false;
+                h.IsDisplayedOnHomepage = false;
                 await _unitOfWork.HeroRepository.UpdateAsync(h);
             }
 
-            // Seçilen hero'yu aktif yap
-            hero.IsActive = true;
+            // Seçilen hero'yu anasayfada göster
+            hero.IsDisplayedOnHomepage = true;
             await _unitOfWork.HeroRepository.UpdateAsync(hero);
             await _unitOfWork.SaveChangesAsync();
 

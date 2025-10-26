@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using EduExcellence.Application.Interfaces;
+using EduExcellence.Application.Services;
 using EduExcellence.Domain.Entities;
 using EduExcellence.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
+using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace EduExcellence.WebApi.Controllers
 {
@@ -11,10 +15,20 @@ namespace EduExcellence.WebApi.Controllers
     public class ContactMessageController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
+        private readonly IRateLimitService _rateLimitService;
+        private readonly ILogger<ContactMessageController> _logger;
 
-        public ContactMessageController(IUnitOfWork unitOfWork)
+        public ContactMessageController(
+            IUnitOfWork unitOfWork, 
+            IEmailService emailService, 
+            IRateLimitService rateLimitService,
+            ILogger<ContactMessageController> logger)
         {
             _unitOfWork = unitOfWork;
+            _emailService = emailService;
+            _rateLimitService = rateLimitService;
+            _logger = logger;
         }
 
         // Public endpoint for submitting contact messages
@@ -23,10 +37,47 @@ namespace EduExcellence.WebApi.Controllers
         {
             try
             {
+                // Input validation
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(ModelState);
+                    return BadRequest(new { message = "Invalid input data", errors = ModelState });
                 }
+
+                // Additional validation
+                if (string.IsNullOrWhiteSpace(contactMessage.Name) || contactMessage.Name.Length < 2)
+                {
+                    return BadRequest(new { message = "Name must be at least 2 characters long" });
+                }
+
+                if (string.IsNullOrWhiteSpace(contactMessage.Email) || !IsValidEmail(contactMessage.Email))
+                {
+                    return BadRequest(new { message = "Valid email address is required" });
+                }
+
+                if (string.IsNullOrWhiteSpace(contactMessage.Message) || contactMessage.Message.Length < 10)
+                {
+                    return BadRequest(new { message = "Message must be at least 10 characters long" });
+                }
+
+                // Rate limiting by IP
+                var clientIp = GetClientIpAddress();
+                if (!_rateLimitService.IsAllowed($"contact_ip_{clientIp}", maxAttempts: 3, window: TimeSpan.FromMinutes(15)))
+                {
+                    _logger.LogWarning($"Rate limit exceeded for IP: {clientIp}");
+                    return StatusCode(429, new { message = "Too many requests. Please try again in 15 minutes." });
+                }
+
+                // Rate limiting by email
+                if (!_rateLimitService.IsAllowed($"contact_email_{contactMessage.Email}", maxAttempts: 5, window: TimeSpan.FromHours(1)))
+                {
+                    _logger.LogWarning($"Rate limit exceeded for email: {contactMessage.Email}");
+                    return StatusCode(429, new { message = "Too many messages from this email. Please try again later." });
+                }
+
+                // Sanitize input to prevent XSS
+                contactMessage.Name = SanitizeInput(contactMessage.Name);
+                contactMessage.Subject = SanitizeInput(contactMessage.Subject);
+                contactMessage.Message = SanitizeInput(contactMessage.Message);
 
                 // Set default values
                 contactMessage.IsRead = false;
@@ -37,12 +88,79 @@ namespace EduExcellence.WebApi.Controllers
                 await _unitOfWork.ContactMessages.AddAsync(contactMessage);
                 await _unitOfWork.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(GetContactMessage), new { id = contactMessage.Id }, contactMessage);
+                // Send email notification to admin (async, don't block response)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _emailService.SendContactNotificationAsync(
+                            contactMessage.Name,
+                            contactMessage.Email,
+                            contactMessage.Phone ?? "",
+                            contactMessage.Subject,
+                            contactMessage.Message
+                        );
+                    }
+                    catch (Exception emailEx)
+                    {
+                        _logger.LogError(emailEx, $"Failed to send email notification for contact message {contactMessage.Id}");
+                    }
+                });
+
+                _logger.LogInformation($"Contact message created successfully from {contactMessage.Email}");
+                return CreatedAtAction(nameof(GetContactMessage), new { id = contactMessage.Id }, 
+                    new { message = "Your message has been sent successfully. We will contact you soon.", id = contactMessage.Id });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "An error occurred while creating contact message", error = ex.Message });
+                _logger.LogError(ex, "Error creating contact message");
+                return StatusCode(500, new { message = "An error occurred while sending your message. Please try again later." });
             }
+        }
+
+        private string GetClientIpAddress()
+        {
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            
+            // Check for forwarded IP (if behind proxy/load balancer)
+            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+            {
+                ipAddress = Request.Headers["X-Forwarded-For"].ToString().Split(',').FirstOrDefault()?.Trim();
+            }
+            else if (Request.Headers.ContainsKey("X-Real-IP"))
+            {
+                ipAddress = Request.Headers["X-Real-IP"].ToString();
+            }
+
+            return ipAddress ?? "unknown";
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                var emailAttribute = new EmailAddressAttribute();
+                return emailAttribute.IsValid(email);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private string SanitizeInput(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            // Remove potentially dangerous HTML/script tags
+            var sanitized = Regex.Replace(input, @"<[^>]*>", string.Empty);
+            
+            // Trim and normalize whitespace
+            return sanitized.Trim();
         }
 
         // Admin endpoints (authorization required)

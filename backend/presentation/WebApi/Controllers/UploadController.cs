@@ -88,6 +88,7 @@ namespace EduExcellence.WebApi.Controllers
         }
 
         [HttpPost("multiple")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> UploadMultipleFiles(List<IFormFile> files)
         {
             try
@@ -155,12 +156,36 @@ namespace EduExcellence.WebApi.Controllers
         {
             try
             {
-                var filePath = Path.Combine(_environment.WebRootPath, "uploads", type, fileName);
+                // Sanitize fileName and type to prevent path traversal attacks
+                var sanitizedFileName = Path.GetFileName(fileName); // Removes any path components
+                var sanitizedType = Path.GetFileName(type);
+                
+                // Validate type against whitelist
+                var allowedTypes = new[] { "image", "video" };
+                if (!allowedTypes.Contains(sanitizedType))
+                {
+                    _logger.LogWarning("Invalid file type attempted: {Type}", type);
+                    return BadRequest(new { message = "Invalid file type." });
+                }
+                
+                // Construct file path
+                var uploadsPath = Path.Combine(_environment.WebRootPath, "uploads", sanitizedType);
+                var filePath = Path.Combine(uploadsPath, sanitizedFileName);
+                
+                // Ensure the resolved path is within the allowed directory (prevent path traversal)
+                var fullPath = Path.GetFullPath(filePath);
+                var allowedPath = Path.GetFullPath(uploadsPath);
+                
+                if (!fullPath.StartsWith(allowedPath + Path.DirectorySeparatorChar) && fullPath != allowedPath)
+                {
+                    _logger.LogWarning("Path traversal attempt detected: {FileName}", fileName);
+                    return BadRequest(new { message = "Invalid file path." });
+                }
                 
                 if (System.IO.File.Exists(filePath))
                 {
                     System.IO.File.Delete(filePath);
-                    _logger.LogInformation("File deleted successfully: {FileName}", fileName);
+                    _logger.LogInformation("File deleted successfully: {FileName}", sanitizedFileName);
                     return Ok(new { message = "File deleted successfully." });
                 }
                 

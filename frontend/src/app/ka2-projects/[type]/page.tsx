@@ -127,7 +127,7 @@ export default function KA2ProjectPage() {
       try {
         console.log(`Fetching projects for type: ${projectType.toUpperCase()}`);
         // Tüm projeleri çek ve type'a göre filtrele
-        const response = await fetch(`https://localhost:7166/api/Ka2`);
+        const response = await fetch('https://localhost:7166/api/Ka2');
         console.log(`Response status: ${response.status}`);
         
         if (response.ok) {
@@ -411,12 +411,15 @@ export default function KA2ProjectPage() {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   Explore project outputs, publications, presentations, and dissemination activities to share project results with stakeholders.
                 </p>
-                <button className={`w-full bg-gradient-to-r ${config.color} text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center group`}>
-                  <span>View Resources</span>
+                <Link 
+                  href={`/ka2-projects/${projectType}/disseminations?projectId=${project?.id}`}
+                  className={`w-full bg-gradient-to-r ${config.color} text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center group`}
+                >
+                  <span>View Disseminations</span>
                   <svg className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
-                </button>
+                </Link>
               </div>
             </div>
           </div>

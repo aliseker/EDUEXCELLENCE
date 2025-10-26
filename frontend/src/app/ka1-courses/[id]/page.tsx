@@ -12,8 +12,8 @@ interface Course {
   description: string;
   fee: string;
   duration: string;
-  startDate: string | null;
-  endDate: string | null;
+  startDate: string;
+  endDate: string;
   location: string;
   level: string;
   maxParticipants: number;

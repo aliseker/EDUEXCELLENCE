@@ -94,6 +94,32 @@ export default function AdminHome() {
   const [meetingImages, setMeetingImages] = useState<File[]>([]);
   const [meetingImagePreviews, setMeetingImagePreviews] = useState<string[]>([]);
 
+  // Dissemination management states
+  const [showDisseminationModal, setShowDisseminationModal] = useState(false);
+  const [currentProjectDisseminations, setCurrentProjectDisseminations] = useState<any[]>([]);
+  const [selectedDisseminationProjectId, setSelectedDisseminationProjectId] = useState<number | null>(null);
+  const [editingDissemination, setEditingDissemination] = useState<any>(null);
+  const [disseminationImages, setDisseminationImages] = useState<File[]>([]);
+  const [disseminationImagePreviews, setDisseminationImagePreviews] = useState<string[]>([]);
+
+  // Modern Confirmation Modal States
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    type?: 'danger' | 'warning' | 'info';
+  }>({
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    confirmText: 'Tamam',
+    cancelText: 'İptal',
+    type: 'danger'
+  });
+
   useEffect(() => {
     const checkAuth = async () => {
       const adminAuth = localStorage.getItem('adminLoggedIn');
@@ -578,85 +604,114 @@ export default function AdminHome() {
     setExistingImages(newExistingImages);
   };
 
-  const handleDelete = async (type: string, id: number) => {
-    if (confirm('Bu öğeyi silmek istediğinizden emin misiniz?')) {
-      const token = localStorage.getItem('adminToken');
-      
-      try {
-        switch (type) {
-          case 'blog':
-            console.log('Deleting blog with id:', id);
-            
-            const blogResponse = await fetch(`https://localhost:7166/api/Blogs/${id}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-            console.log('Blog delete response status:', blogResponse.status);
-            
-            if (blogResponse.ok) {
-              console.log('Blog deleted successfully');
-              setBlogs(blogs.filter(blog => blog.id !== id));
-            } else {
-              const errorText = await blogResponse.text();
-              console.error('Blog delete failed:', errorText);
-              alert('Blog delete failed: ' + errorText);
-            }
-            break;
-            
-          case 'ka1course':
-            console.log('Deleting course with id:', id);
-            
-            const courseResponse = await fetch(`https://localhost:7166/api/Courses/${id}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-            console.log('Delete response status:', courseResponse.status);
-            
-            if (courseResponse.ok) {
-              console.log('Course deleted successfully');
-              setCourses(courses.filter(course => course.id !== id));
-              setKa1Courses(ka1Courses.filter(course => course.id !== id));
-            } else {
-              const errorText = await courseResponse.text();
-              console.error('Delete failed:', errorText);
-              alert('Delete failed: ' + errorText);
-            }
-            break;
-            
-          case 'ka2project':
-            console.log('Deleting KA2 project with id:', id);
-            
-            const ka2Response = await fetch(`https://localhost:7166/api/Ka2/${id}`, {
-              method: 'DELETE',
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-            
-            console.log('KA2 delete response status:', ka2Response.status);
-            
-            if (ka2Response.ok) {
-              console.log('KA2 project deleted successfully');
-              setKa2Projects(ka2Projects.filter(project => project.id !== id));
-              toast.success('KA2 projesi başarıyla silindi!');
-            } else {
-              const errorText = await ka2Response.text();
-              console.error('KA2 delete failed:', errorText);
-              toast.error('KA2 projesi silinemedi: ' + errorText);
-            }
-            break;
-        }
-      } catch (error) {
-        console.error('Error deleting item:', error);
-        alert('Error deleting item. Please try again.');
-      }
+  const handleDelete = (type: string, id: number) => {
+    // Type'a göre başlık ve mesaj belirle
+    let title = '';
+    let message = '';
+    
+    switch (type) {
+      case 'blog':
+        title = 'Blog/Haber Sil';
+        message = 'Bu blog/haberi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+        break;
+      case 'ka1course':
+        title = 'KA1 Kursu Sil';
+        message = 'Bu kursu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+        break;
+      case 'ka2project':
+        title = 'KA2 Projesi Sil';
+        message = 'Bu projeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.';
+        break;
     }
+
+    showConfirm(
+      title,
+      message,
+      async () => {
+        const token = localStorage.getItem('adminToken');
+        
+        try {
+          switch (type) {
+            case 'blog':
+              console.log('Deleting blog with id:', id);
+              
+              const blogResponse = await fetch(`https://localhost:7166/api/Blogs/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              console.log('Blog delete response status:', blogResponse.status);
+              
+              if (blogResponse.ok) {
+                console.log('Blog deleted successfully');
+                setBlogs(blogs.filter(blog => blog.id !== id));
+                toast.success('Blog/Haber başarıyla silindi!');
+                setShowConfirmModal(false);
+              } else {
+                const errorText = await blogResponse.text();
+                console.error('Blog delete failed:', errorText);
+                toast.error('Blog/Haber silinemedi: ' + errorText);
+              }
+              break;
+              
+            case 'ka1course':
+              console.log('Deleting course with id:', id);
+              
+              const courseResponse = await fetch(`https://localhost:7166/api/Courses/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              console.log('Delete response status:', courseResponse.status);
+              
+              if (courseResponse.ok) {
+                console.log('Course deleted successfully');
+                setCourses(courses.filter(course => course.id !== id));
+                setKa1Courses(ka1Courses.filter(course => course.id !== id));
+                toast.success('KA1 kursu başarıyla silindi!');
+                setShowConfirmModal(false);
+              } else {
+                const errorText = await courseResponse.text();
+                console.error('Delete failed:', errorText);
+                toast.error('Kurs silinemedi: ' + errorText);
+              }
+              break;
+              
+            case 'ka2project':
+              console.log('Deleting KA2 project with id:', id);
+              
+              const ka2Response = await fetch(`https://localhost:7166/api/Ka2/${id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              console.log('KA2 delete response status:', ka2Response.status);
+              
+              if (ka2Response.ok) {
+                console.log('KA2 project deleted successfully');
+                setKa2Projects(ka2Projects.filter(project => project.id !== id));
+                toast.success('KA2 projesi başarıyla silindi!');
+                setShowConfirmModal(false);
+              } else {
+                const errorText = await ka2Response.text();
+                console.error('KA2 delete failed:', errorText);
+                toast.error('KA2 projesi silinemedi: ' + errorText);
+              }
+              break;
+          }
+        } catch (error) {
+          console.error('Error deleting item:', error);
+          toast.error('Silme işlemi sırasında bir hata oluştu!');
+        }
+      },
+      'danger'
+    );
   };
 
   const handleSave = async (type: string, data: any, e?: React.FormEvent) => {
@@ -1128,13 +1183,21 @@ export default function AdminHome() {
           imageFormData.append('files', file);
         });
 
+        const token = localStorage.getItem('adminToken');
         const uploadResponse = await fetch('https://localhost:7166/api/Upload/multiple', {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
           body: imageFormData,
         });
 
         if (uploadResponse.ok) {
           uploadedImageUrls = await uploadResponse.json();
+        } else {
+          const errorText = await uploadResponse.text();
+          console.error('Upload error:', errorText);
+          toast.error('Fotoğraflar yüklenirken hata oluştu!');
         }
       }
 
@@ -1165,9 +1228,13 @@ export default function AdminHome() {
           images: allImages
         };
 
+        const token = localStorage.getItem('adminToken');
         const response = await fetch(`https://localhost:7166/api/Meeting/${editingMeeting.id}`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(updateData),
         });
 
@@ -1194,9 +1261,13 @@ export default function AdminHome() {
           ka2ProjectId: selectedProjectId
         };
 
+        const token = localStorage.getItem('adminToken');
         const response = await fetch('https://localhost:7166/api/Meeting', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify(createData),
         });
 
@@ -1219,22 +1290,267 @@ export default function AdminHome() {
     }
   };
 
-  const handleDeleteMeeting = async (meetingId: number) => {
-    if (!confirm('Bu meeting\'i silmek istediğinizden emin misiniz?')) return;
+  // Modern confirmation helper function
+  const showConfirm = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'warning' | 'info' = 'danger') => {
+    setConfirmConfig({
+      title,
+      message,
+      onConfirm,
+      confirmText: type === 'danger' ? 'Sil' : 'Tamam',
+      cancelText: 'İptal',
+      type
+    });
+    setShowConfirmModal(true);
+  };
 
+  const handleDeleteMeeting = (meetingId: number) => {
+    showConfirm(
+      'Meeting Sil',
+      'Bu meeting\'i silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      async () => {
+        try {
+          const token = localStorage.getItem('adminToken');
+          const response = await fetch(`https://localhost:7166/api/Meeting/${meetingId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            setCurrentProjectMeetings(prev => prev.filter(m => m.id !== meetingId));
+            toast.success('Meeting başarıyla silindi!');
+            setShowConfirmModal(false);
+          } else {
+            toast.error('Meeting silinemedi!');
+          }
+        } catch (error) {
+          console.error('Error deleting meeting:', error);
+          toast.error('Meeting silinemedi!');
+        }
+      },
+      'danger'
+    );
+  };
+
+  // Dissemination Management Functions
+  const handleManageDisseminations = async (projectId: number) => {
+    setSelectedDisseminationProjectId(projectId);
+    setShowDisseminationModal(true);
+    
     try {
-      const response = await fetch(`https://localhost:7166/api/Meeting/${meetingId}`, {
-        method: 'DELETE',
-      });
-
+      const response = await fetch(`https://localhost:7166/api/Dissemination/project/${projectId}`);
       if (response.ok) {
-        setCurrentProjectMeetings(prev => prev.filter(m => m.id !== meetingId));
-        toast.success('Meeting başarıyla silindi!');
+        const disseminations = await response.json();
+        setCurrentProjectDisseminations(disseminations);
       }
     } catch (error) {
-      console.error('Error deleting meeting:', error);
-      toast.error('Meeting silinemedi!');
+      console.error('Error fetching disseminations:', error);
     }
+  };
+
+  const handleAddDissemination = () => {
+    setEditingDissemination({
+      title: '',
+      description: '',
+      images: []
+    });
+    setDisseminationImages([]);
+    setDisseminationImagePreviews([]);
+  };
+
+  const handleEditDissemination = (dissemination: any) => {
+    setEditingDissemination({
+      ...dissemination,
+      images: dissemination.images || []
+    });
+    
+    const imagePreviews = (dissemination.images || []).map((img: string) => 
+      img.startsWith('http') ? img : `https://localhost:7166${img}`
+    );
+    setDisseminationImagePreviews(imagePreviews);
+    setDisseminationImages([]);
+  };
+
+  const handleDisseminationImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    
+    setDisseminationImages(prev => [...prev, ...files]);
+    
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDisseminationImagePreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+    
+    e.target.value = '';
+  };
+
+  const handleRemoveDisseminationImage = (index: number) => {
+    const existingImagesCount = editingDissemination?.images?.length || 0;
+    
+    if (index < existingImagesCount) {
+      setEditingDissemination((prev: any) => ({
+        ...prev,
+        images: prev.images.filter((_: any, i: number) => i !== index)
+      }));
+    } else {
+      const newImageIndex = index - existingImagesCount;
+      setDisseminationImages(prev => prev.filter((_, i) => i !== newImageIndex));
+    }
+    
+    setDisseminationImagePreviews(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveDissemination = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedDisseminationProjectId) return;
+
+    const formData = new FormData(e.currentTarget);
+    const title = formData.get('disseminationTitle') as string;
+    const description = formData.get('disseminationDescription') as string;
+
+    try {
+      let uploadedImageUrls: string[] = [];
+      
+      if (disseminationImages.length > 0) {
+        const imageFormData = new FormData();
+        disseminationImages.forEach(file => {
+          imageFormData.append('files', file);
+        });
+
+        const token = localStorage.getItem('adminToken');
+        const uploadResponse = await fetch('https://localhost:7166/api/Upload/multiple', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: imageFormData,
+        });
+
+        if (uploadResponse.ok) {
+          uploadedImageUrls = await uploadResponse.json();
+        } else {
+          const errorText = await uploadResponse.text();
+          console.error('Upload error:', errorText);
+          toast.error('Fotoğraflar yüklenirken hata oluştu!');
+        }
+      }
+
+      const existingImages = (editingDissemination?.images || [])
+        .filter((img: string) => img && img.trim() !== '')
+        .map((img: string) => {
+          if (img.startsWith('https://localhost:7166')) {
+            return img.replace('https://localhost:7166', '');
+          }
+          if (img.startsWith('http://localhost:7166')) {
+            return img.replace('http://localhost:7166', '');
+          }
+          return img;
+        });
+      
+      const allImages = [...existingImages, ...uploadedImageUrls];
+
+      if (editingDissemination?.id) {
+        const updateData = {
+          id: editingDissemination.id,
+          title,
+          description,
+          images: allImages
+        };
+
+        const token = localStorage.getItem('adminToken');
+        const response = await fetch(`https://localhost:7166/api/Dissemination/${editingDissemination.id}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(updateData),
+        });
+
+        if (response.ok) {
+          const updated = await response.json();
+          setCurrentProjectDisseminations(prev => 
+            prev.map(d => d.id === updated.id ? updated : d)
+          );
+          toast.success('Dissemination başarıyla güncellendi!');
+          setEditingDissemination(null);
+          setDisseminationImages([]);
+          setDisseminationImagePreviews([]);
+        } else {
+          const errorData = await response.text();
+          console.error('Update error:', errorData);
+          toast.error(`Dissemination güncellenemedi: ${errorData}`);
+        }
+      } else {
+        const createData = {
+          title,
+          description,
+          images: allImages,
+          ka2ProjectId: selectedDisseminationProjectId
+        };
+
+        const token = localStorage.getItem('adminToken');
+        const response = await fetch('https://localhost:7166/api/Dissemination', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(createData),
+        });
+
+        if (response.ok) {
+          const created = await response.json();
+          setCurrentProjectDisseminations(prev => [...prev, created]);
+          toast.success('Dissemination başarıyla eklendi!');
+          setEditingDissemination(null);
+          setDisseminationImages([]);
+          setDisseminationImagePreviews([]);
+        } else {
+          const errorData = await response.text();
+          console.error('Create error:', errorData);
+          toast.error(`Dissemination eklenemedi: ${errorData}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving dissemination:', error);
+      toast.error('Dissemination kaydedilirken bir hata oluştu!');
+    }
+  };
+
+  const handleDeleteDissemination = (disseminationId: number) => {
+    showConfirm(
+      'Dissemination Sil',
+      'Bu dissemination\'ı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      async () => {
+        try {
+          const token = localStorage.getItem('adminToken');
+          const response = await fetch(`https://localhost:7166/api/Dissemination/${disseminationId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            setCurrentProjectDisseminations(prev => prev.filter(d => d.id !== disseminationId));
+            toast.success('Dissemination başarıyla silindi!');
+            setShowConfirmModal(false);
+          } else {
+            toast.error('Dissemination silinemedi!');
+          }
+        } catch (error) {
+          console.error('Error deleting dissemination:', error);
+          toast.error('Dissemination silinemedi!');
+        }
+      },
+      'danger'
+    );
   };
 
   const handleSaveWhatsAppSettings = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1868,6 +2184,16 @@ export default function AdminHome() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
                           Meetings
+                        </button>
+                        <button
+                          onClick={() => handleManageDisseminations(project.id)}
+                          className="px-3 py-2 text-sm font-medium text-green-600 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 flex items-center"
+                          title="Manage Disseminations"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                          </svg>
+                          Disseminations
                         </button>
                         <button
                           onClick={() => handleEdit('ka2project', project)}
@@ -3046,6 +3372,202 @@ export default function AdminHome() {
         </div>
       )}
 
+      {/* Dissemination Management Modal */}
+      {showDisseminationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
+              <h2 className="text-2xl font-bold text-gray-900">Dissemination Yönetimi</h2>
+              <button
+                onClick={() => {
+                  setShowDisseminationModal(false);
+                  setCurrentProjectDisseminations([]);
+                  setSelectedDisseminationProjectId(null);
+                  setEditingDissemination(null);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Add Dissemination Button */}
+              {!editingDissemination && (
+                <button
+                  onClick={handleAddDissemination}
+                  className="w-full mb-6 flex items-center justify-center px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-teal-600 rounded-lg hover:from-green-700 hover:to-teal-700 transition-all duration-200"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Yeni Dissemination Ekle
+                </button>
+              )}
+
+              {/* Dissemination Form */}
+              {editingDissemination && (
+                <form onSubmit={handleSaveDissemination} className="mb-6 bg-green-50 p-6 rounded-lg border border-green-200">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    {editingDissemination.id ? 'Dissemination Düzenle' : 'Yeni Dissemination'}
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Başlık *</label>
+                      <input
+                        type="text"
+                        name="disseminationTitle"
+                        defaultValue={editingDissemination.title}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Açıklama *</label>
+                      <textarea
+                        name="disseminationDescription"
+                        defaultValue={editingDissemination.description}
+                        rows={4}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Fotoğraflar</label>
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleDisseminationImageChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                      />
+                      
+                      {/* Image Previews */}
+                      {disseminationImagePreviews.length > 0 && (
+                        <div className="mt-4 grid grid-cols-4 gap-4">
+                          {disseminationImagePreviews.map((preview, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={preview}
+                                alt={'Preview ' + (index + 1)}
+                                className="w-full h-24 object-cover rounded-lg"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDisseminationImage(index)}
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDissemination(null);
+                        setDisseminationImages([]);
+                        setDisseminationImagePreviews([]);
+                      }}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+                    >
+                      {editingDissemination.id ? 'Güncelle' : 'Ekle'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Disseminations List */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Mevcut Disseminationlar ({currentProjectDisseminations.length})</h3>
+                {currentProjectDisseminations.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg">
+                    <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                    </svg>
+                    <p className="text-gray-600">Henüz dissemination eklenmemiş</p>
+                  </div>
+                ) : (
+                  currentProjectDisseminations.map((dissemination) => (
+                    <div key={dissemination.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="text-lg font-semibold text-gray-900 mb-2">{dissemination.title}</h4>
+                          <p className="text-gray-600 mb-3 line-clamp-2">{dissemination.description}</p>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span className="flex items-center">
+                              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              {dissemination.images?.length || 0} Fotoğraf
+                            </span>
+                            <span>
+                              {new Date(dissemination.createdAt).toLocaleDateString('tr-TR')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex space-x-2 ml-4">
+                          <button
+                            onClick={() => handleEditDissemination(dissemination)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Düzenle"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDissemination(dissemination.id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Sil"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Dissemination Images */}
+                      {dissemination.images && dissemination.images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-6 gap-2">
+                          {dissemination.images.slice(0, 6).map((image: string, idx: number) => (
+                            <img
+                              key={idx}
+                              src={image.startsWith('http') ? image : `https://localhost:7166${image}`}
+                              alt={`Dissemination ${idx + 1}`}
+                              className="w-full h-20 object-cover rounded-lg"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* WhatsApp Settings Modal */}
       {showWhatsAppModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -3132,6 +3654,75 @@ export default function AdminHome() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modern Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowConfirmModal(false)}>
+          {/* Backdrop with blur effect */}
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
+          
+          {/* Modal Content */}
+          <div 
+            className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header with icon */}
+            <div className={`p-6 rounded-t-2xl ${
+              confirmConfig.type === 'danger' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+              confirmConfig.type === 'warning' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+              'bg-gradient-to-r from-blue-500 to-blue-600'
+            }`}>
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  {confirmConfig.type === 'danger' ? (
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  ) : confirmConfig.type === 'warning' ? (
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
+                </div>
+                <h3 className="text-xl font-bold text-white">{confirmConfig.title}</h3>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              <p className="text-gray-700 text-base leading-relaxed">
+                {confirmConfig.message}
+              </p>
+            </div>
+
+            {/* Footer with buttons */}
+            <div className="flex gap-3 p-6 pt-0">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95"
+              >
+                {confirmConfig.cancelText}
+              </button>
+              <button
+                onClick={() => {
+                  confirmConfig.onConfirm();
+                }}
+                className={`flex-1 px-6 py-3 text-white rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg ${
+                  confirmConfig.type === 'danger' ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700' :
+                  confirmConfig.type === 'warning' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' :
+                  'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                }`}
+              >
+                {confirmConfig.confirmText}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,11 +1,9 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost:7166/api';
-
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
 
   constructor() {
-    this.baseURL = API_BASE_URL;
+    this.baseURL = 'https://localhost:7166/api';
     // Get token from localStorage on initialization
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('adminToken');
@@ -32,10 +30,15 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
+    // Her istekte token'ı localStorage'dan al
+    const currentToken = typeof window !== 'undefined' 
+      ? localStorage.getItem('adminToken') 
+      : this.token;
+    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
+        ...(currentToken && { Authorization: `Bearer ${currentToken}` }),
         ...options.headers,
       },
       ...options,
@@ -52,6 +55,11 @@ class ApiService {
         
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      // 204 No Content veya boş response için boş obje döndür
+      if (response.status === 204 || response.headers.get('content-length') === '0') {
+        return {} as T;
       }
 
       return await response.json();
@@ -250,6 +258,7 @@ class ApiService {
     title: string;
     description?: string;
     items: Array<{ text: string }>;
+    isActive?: boolean;
   }) {
     return this.request('/hero', {
       method: 'POST',

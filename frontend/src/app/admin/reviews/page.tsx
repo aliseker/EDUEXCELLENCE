@@ -34,6 +34,24 @@ export default function ReviewsManagement() {
   const [activeTab, setActiveTab] = useState<'reviews' | 'videos'>('reviews');
   const router = useRouter();
 
+  // Modern Confirmation Modal States
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    type?: 'danger' | 'warning' | 'info';
+  }>({
+    title: '',
+    message: '',
+    onConfirm: () => {},
+    confirmText: 'Tamam',
+    cancelText: 'İptal',
+    type: 'danger'
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     title: '',
@@ -166,31 +184,48 @@ export default function ReviewsManagement() {
     setShowModal(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Bu yorumu silmek istediğinizden emin misiniz?')) {
-      return;
-    }
+  // Modern confirmation helper function
+  const showConfirm = (title: string, message: string, onConfirm: () => void, type: 'danger' | 'warning' | 'info' = 'danger') => {
+    setConfirmConfig({
+      title,
+      message,
+      onConfirm,
+      confirmText: type === 'danger' ? 'Sil' : 'Tamam',
+      cancelText: 'İptal',
+      type
+    });
+    setShowConfirmModal(true);
+  };
 
-    try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`https://localhost:7166/api/Review/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+  const handleDelete = (id: number) => {
+    showConfirm(
+      'Yorum Sil',
+      'Bu yorumu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      async () => {
+        try {
+          const token = localStorage.getItem('adminToken');
+          const response = await fetch(`https://localhost:7166/api/Review/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            toast.success('Yorum silindi!');
+            fetchReviews();
+            setShowConfirmModal(false);
+          } else {
+            toast.error('Yorum silinemedi!');
+          }
+        } catch (error) {
+          console.error('Error deleting review:', error);
+          toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
         }
-      });
-
-      if (response.ok) {
-        toast.success('Yorum silindi!');
-        fetchReviews();
-      } else {
-        toast.error('Yorum silinemedi!');
-      }
-    } catch (error) {
-      console.error('Error deleting review:', error);
-      toast.error('Bir hata oluştu. Lütfen tekrar deneyin.');
-    }
+      },
+      'danger'
+    );
   };
 
   const resetForm = () => {
@@ -686,6 +721,60 @@ export default function ReviewsManagement() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modern Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4" onClick={() => setShowConfirmModal(false)}>
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
+          
+          <div 
+            className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={`p-6 rounded-t-2xl ${
+              confirmConfig.type === 'danger' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+              confirmConfig.type === 'warning' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+              'bg-gradient-to-r from-blue-500 to-blue-600'
+            }`}>
+              <div className="flex items-center gap-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-white">{confirmConfig.title}</h3>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <p className="text-gray-700 text-base leading-relaxed">
+                {confirmConfig.message}
+              </p>
+            </div>
+
+            <div className="flex gap-3 p-6 pt-0">
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95"
+              >
+                {confirmConfig.cancelText}
+              </button>
+              <button
+                onClick={() => {
+                  confirmConfig.onConfirm();
+                }}
+                className={`flex-1 px-6 py-3 text-white rounded-xl font-semibold transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg ${
+                  confirmConfig.type === 'danger' ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700' :
+                  confirmConfig.type === 'warning' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700' :
+                  'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                }`}
+              >
+                {confirmConfig.confirmText}
+              </button>
             </div>
           </div>
         </div>

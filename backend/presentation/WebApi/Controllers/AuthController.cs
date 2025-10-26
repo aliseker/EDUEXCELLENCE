@@ -1,8 +1,7 @@
 using EduExcellence.Application.DTOs.Auth;
 using EduExcellence.Application.Interfaces;
+using EduExcellence.Application.Services;
 using Microsoft.AspNetCore.Mvc;
-// Rate limiting kaldırıldı
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace EduExcellence.WebApi.Controllers
 {
@@ -11,11 +10,16 @@ namespace EduExcellence.WebApi.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IRateLimitService _rateLimitService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService, 
+            IRateLimitService rateLimitService,
+            ILogger<AuthController> logger)
         {
             _authService = authService;
+            _rateLimitService = rateLimitService;
             _logger = logger;
         }
 
@@ -24,7 +28,15 @@ namespace EduExcellence.WebApi.Controllers
         {
             try
             {
-                _logger.LogInformation("Login attempt from IP: {IP}", HttpContext.Connection.RemoteIpAddress);
+                var clientIp = GetClientIpAddress();
+                _logger.LogInformation("Login attempt from IP: {IP}", clientIp);
+                
+                // Rate limiting by IP: 5 attempts per 15 minutes
+                if (!_rateLimitService.IsAllowed($"login_ip_{clientIp}", maxAttempts: 5, window: TimeSpan.FromMinutes(15)))
+                {
+                    _logger.LogWarning("Login rate limit exceeded for IP: {IP}", clientIp);
+                    return StatusCode(429, new { message = "Too many login attempts. Please try again in 15 minutes." });
+                }
                 
                 if (!ModelState.IsValid)
                 {
@@ -35,9 +47,15 @@ namespace EduExcellence.WebApi.Controllers
                 
                 if (result == null)
                 {
+                    // Rate limiting by email on failed attempts
+                    _rateLimitService.IsAllowed($"login_email_{request.Email}", maxAttempts: 3, window: TimeSpan.FromMinutes(30));
                     return Unauthorized(new { message = "Invalid email or password" });
                 }
 
+                // Clear rate limit on successful login
+                _rateLimitService.Clear($"login_ip_{clientIp}");
+                _rateLimitService.Clear($"login_email_{request.Email}");
+                
                 _logger.LogInformation("Admin {Email} logged in successfully", request.Email);
                 return Ok(result);
             }
@@ -46,6 +64,23 @@ namespace EduExcellence.WebApi.Controllers
                 _logger.LogError(ex, "Error during login for email {Email}", request.Email);
                 return StatusCode(500, new { message = "An error occurred during login" });
             }
+        }
+        
+        private string GetClientIpAddress()
+        {
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            
+            // Check for forwarded IP (if behind proxy/load balancer)
+            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+            {
+                ipAddress = Request.Headers["X-Forwarded-For"].ToString().Split(',').FirstOrDefault()?.Trim();
+            }
+            else if (Request.Headers.ContainsKey("X-Real-IP"))
+            {
+                ipAddress = Request.Headers["X-Real-IP"].ToString();
+            }
+
+            return ipAddress ?? "unknown";
         }
 
         [HttpPost("validate")]

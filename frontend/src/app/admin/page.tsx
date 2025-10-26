@@ -32,32 +32,12 @@ export default function AdminLogin() {
         localStorage.setItem('adminLoggedIn', 'true');
         router.push('/admin/home');
       } else {
-        // HTTP status koduna göre özel mesajlar
-        if (response.status === 429) {
-          setError('Çok fazla yanlış deneme yaptınız! 15 dakika sonra tekrar deneyin.');
-        } else if (response.status === 401) {
-          setError('Geçersiz email veya şifre');
-        } else if (response.status === 400) {
-          setError('Lütfen email ve şifre alanlarını doldurun');
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          setError(errorData.message || 'Bir hata oluştu');
-        }
+        const errorData = await response.json();
+        setError(errorData.message || 'Geçersiz email veya şifre');
       }
     } catch (error) {
       console.error('Login error:', error);
-      // Error mesajına göre özel mesajlar
-      if (error instanceof Error) {
-        if (error.message.includes('Çok fazla deneme')) {
-          setError('Çok fazla yanlış deneme yaptınız! 15 dakika sonra tekrar deneyin.');
-        } else if (error.message.includes('fetch')) {
-          setError('Sunucuya bağlanırken bir hata oluştu. Lütfen internet bağlantınızı kontrol edin.');
-        } else {
-          setError('Beklenmeyen bir hata oluştu');
-        }
-      } else {
-        setError('Sunucuya bağlanırken bir hata oluştu');
-      }
+      setError('Sunucuya bağlanırken bir hata oluştu');
     }
     
     setIsLoading(false);

@@ -35,9 +35,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  env: {
-    NEXT_PUBLIC_API_URL: 'https://localhost:7166/api',
-  },
 };
 
 export default nextConfig;

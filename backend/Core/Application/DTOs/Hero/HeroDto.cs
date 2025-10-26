@@ -6,6 +6,7 @@ namespace EduExcellence.Application.DTOs.Hero
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public List<HeroItemDto> Items { get; set; } = new List<HeroItemDto>();
+        public bool IsDisplayedOnHomepage { get; set; } // Anasayfada gösteriliyor mu?
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -22,6 +23,7 @@ namespace EduExcellence.Application.DTOs.Hero
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public List<CreateHeroItemDto> Items { get; set; } = new List<CreateHeroItemDto>();
+        // IsDisplayedOnHomepage backend'de otomatik false set edilir
     }
 
     public class CreateHeroItemDto

@@ -93,7 +93,7 @@ export default function NewsDetailPage() {
     const fetchNewsItem = async () => {
       try {
         const newsId = params.id as string;
-        const response = await fetch(`https://localhost:7166/api/Blogs/${newsId}`);
+        const response = await fetch('https://localhost:7166/api/Blogs/' + newsId);
         
         if (response.ok) {
           const data = await response.json();

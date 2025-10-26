@@ -11,10 +11,12 @@ namespace EduExcellence.WebApi.Controllers
     public class ContactController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IEmailService _emailService;
 
-        public ContactController(IUnitOfWork unitOfWork)
+        public ContactController(IUnitOfWork unitOfWork, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
+            _emailService = emailService;
         }
 
         // Public endpoints (no authorization required)
@@ -45,6 +47,42 @@ namespace EduExcellence.WebApi.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "An error occurred while retrieving contacts by type", error = ex.Message });
+            }
+        }
+
+        [HttpPost("send-email")]
+        public async Task<IActionResult> SendContactEmail([FromBody] ContactEmailRequest request)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(new { message = "Invalid request data", errors = ModelState });
+                }
+
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(request.Name) || 
+                    string.IsNullOrWhiteSpace(request.Email) || 
+                    string.IsNullOrWhiteSpace(request.Subject) || 
+                    string.IsNullOrWhiteSpace(request.Message))
+                {
+                    return BadRequest(new { message = "Name, email, subject, and message are required" });
+                }
+
+                // Send email using the email service
+                await _emailService.SendContactNotificationAsync(
+                    request.Name,
+                    request.Email,
+                    request.Phone ?? string.Empty,
+                    request.Subject,
+                    request.Message
+                );
+
+                return Ok(new { message = "Email sent successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Failed to send email", error = ex.Message });
             }
         }
 
@@ -204,5 +242,15 @@ namespace EduExcellence.WebApi.Controllers
                 return StatusCode(500, new { message = "An error occurred while updating contacts", error = ex.Message });
             }
         }
+    }
+
+    // DTO for contact email request
+    public class ContactEmailRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public string Subject { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
     }
 }

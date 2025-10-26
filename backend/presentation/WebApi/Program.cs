@@ -46,7 +46,12 @@ namespace EduExcellence.WebApi
 
             // JWT Authentication
             var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["SecretKey"] ?? "your-super-secret-key-that-is-at-least-32-characters-long";
+            var secretKey = jwtSettings["SecretKey"];
+            
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                throw new InvalidOperationException("JWT SecretKey is not configured. Please set JwtSettings:SecretKey in appsettings.");
+            }
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -63,12 +68,15 @@ namespace EduExcellence.WebApi
                     };
                 });
 
-            // CORS
+            // CORS - Dynamic configuration
+            var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() 
+                ?? new[] { "http://localhost:3000", "https://localhost:3000" };
+            
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend", policy =>
                 {
-                    policy.WithOrigins("http://localhost:3000", "https://localhost:3000")
+                    policy.WithOrigins(allowedOrigins)
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials();
@@ -123,6 +131,9 @@ namespace EduExcellence.WebApi
             builder.Services.AddScoped<IReviewService, ReviewService>();
             builder.Services.AddScoped<EduExcellence.Application.Interfaces.IHeroService, EduExcellence.Application.Services.HeroService>();
             builder.Services.AddScoped<IMeetingService, MeetingService>();
+            builder.Services.AddScoped<IDisseminationService, DisseminationService>();
+            builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddSingleton<IRateLimitService, RateLimitService>();
 
             var app = builder.Build();
 
@@ -161,22 +172,13 @@ namespace EduExcellence.WebApi
             // Static files middleware
             app.UseStaticFiles();
 
-            // Development tools
+            // Development tools - Swagger ONLY in Development
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-            else
-            {
-                // Production'da Swagger'ı kapat
-                app.UseSwagger();
-                app.UseSwaggerUI(c =>
-                {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Edu Excellence API v1");
-                    c.RoutePrefix = string.Empty; // Swagger UI'ı root'ta göster
-                });
-            }
+            // Production'da Swagger kapalı (güvenlik)
             
             app.UseAuthentication();
             app.UseAuthorization();

@@ -5,7 +5,7 @@ namespace EduExcellence.Domain.Interfaces
 {
     public interface IHeroRepository : IRepository<Hero>
     {
-        Task<Hero?> GetActiveHeroAsync();
+        Task<Hero?> GetDisplayedHeroAsync(); // Anasayfada gösterilen hero
     }
 
     public interface IHeroItemRepository : IRepository<HeroItem>

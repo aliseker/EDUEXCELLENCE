@@ -21,6 +21,9 @@ namespace EduExcellence.Domain.Entities
         
         // Navigation property for Meetings
         public ICollection<Meeting> Meetings { get; set; } = new List<Meeting>();
+        
+        // Navigation property for Disseminations
+        public ICollection<Dissemination> Disseminations { get; set; } = new List<Dissemination>();
     }
 }
 

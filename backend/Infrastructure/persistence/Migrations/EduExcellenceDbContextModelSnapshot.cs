@@ -418,6 +418,46 @@ namespace persistence.Migrations
                     b.ToTable("CourseLearningOutcomes");
                 });
 
+            modelBuilder.Entity("EduExcellence.Domain.Entities.Dissemination", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Images")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Ka2ProjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Ka2ProjectId");
+
+                    b.ToTable("Disseminations");
+                });
+
             modelBuilder.Entity("EduExcellence.Domain.Entities.Hero", b =>
                 {
                     b.Property<int>("Id")
@@ -434,6 +474,9 @@ namespace persistence.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDisplayedOnHomepage")
                         .HasColumnType("bit");
 
                     b.Property<string>("Title")
@@ -792,6 +835,17 @@ namespace persistence.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("EduExcellence.Domain.Entities.Dissemination", b =>
+                {
+                    b.HasOne("EduExcellence.Domain.Entities.Ka2Project", "Ka2Project")
+                        .WithMany("Disseminations")
+                        .HasForeignKey("Ka2ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Ka2Project");
+                });
+
             modelBuilder.Entity("EduExcellence.Domain.Entities.HeroItem", b =>
                 {
                     b.HasOne("EduExcellence.Domain.Entities.Hero", "Hero")
@@ -833,6 +887,8 @@ namespace persistence.Migrations
 
             modelBuilder.Entity("EduExcellence.Domain.Entities.Ka2Project", b =>
                 {
+                    b.Navigation("Disseminations");
+
                     b.Navigation("Meetings");
                 });
 #pragma warning restore 612, 618

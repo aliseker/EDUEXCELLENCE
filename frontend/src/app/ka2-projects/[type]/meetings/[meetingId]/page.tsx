@@ -28,7 +28,7 @@ export default function MeetingDetailPage() {
   useEffect(() => {
     const fetchMeeting = async () => {
       try {
-        const response = await fetch(`https://localhost:7166/api/Meeting/${meetingId}`);
+        const response = await fetch('https://localhost:7166/api/Meeting/' + meetingId);
         if (response.ok) {
           const data = await response.json();
           setMeeting(data);
@@ -226,6 +226,11 @@ export default function MeetingDetailPage() {
     </div>
   );
 }
+
+
+
+
+
 
 
 

@@ -23,7 +23,7 @@ namespace EduExcellence.Application.DTOs.Course
         public DateTime? UpdatedAt { get; set; }
     }
 
-    public class CreateCourseDto
+    public class CreateCourseDto : IValidatableObject
     {
         [Required(ErrorMessage = "Title is required.")]
         [MaxLength(500, ErrorMessage = "Title cannot exceed 500 characters.")]
@@ -70,6 +70,17 @@ namespace EduExcellence.Application.DTOs.Course
 
         public List<string> LearningOutcomes { get; set; } = new();
         public List<string> DailyPrograms { get; set; } = new();
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (StartDate.HasValue && EndDate.HasValue && EndDate.Value < StartDate.Value)
+            {
+                yield return new ValidationResult(
+                    "End date cannot be earlier than start date.",
+                    new[] { nameof(EndDate) }
+                );
+            }
+        }
     }
 
     public class UpdateCourseDto : CreateCourseDto

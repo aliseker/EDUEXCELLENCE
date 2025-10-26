@@ -28,6 +28,7 @@ namespace EduExcellence.Infrastructure.Persistence.Repositories
             HeroRepository = new HeroRepository(_context);
             HeroItemRepository = new HeroItemRepository(_context);
             Meetings = new MeetingRepository(_context);
+            Disseminations = new DisseminationRepository(_context);
         }
 
         public IRepository<Admin> Admins { get; }
@@ -44,6 +45,7 @@ namespace EduExcellence.Infrastructure.Persistence.Repositories
         public IHeroRepository HeroRepository { get; }
         public IHeroItemRepository HeroItemRepository { get; }
         public IMeetingRepository Meetings { get; }
+        public IDisseminationRepository Disseminations { get; }
 
         public async Task<int> SaveChangesAsync()
         {

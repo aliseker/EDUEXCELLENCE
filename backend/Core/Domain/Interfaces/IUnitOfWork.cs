@@ -18,6 +18,7 @@ namespace EduExcellence.Domain.Interfaces
         IHeroRepository HeroRepository { get; }
         IHeroItemRepository HeroItemRepository { get; }
         IMeetingRepository Meetings { get; }
+        IDisseminationRepository Disseminations { get; }
 
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();

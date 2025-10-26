@@ -25,6 +25,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
         public DbSet<Hero> Heroes { get; set; }
         public DbSet<HeroItem> HeroItems { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
+        public DbSet<Dissemination> Disseminations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -202,6 +203,24 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                     .HasColumnType("nvarchar(max)");
                 entity.HasOne(e => e.Ka2Project)
                     .WithMany(k => k.Meetings)
+                    .HasForeignKey(e => e.Ka2ProjectId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Dissemination configuration
+            modelBuilder.Entity<Dissemination>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.Description).IsRequired();
+                entity.Property(e => e.Images)
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions?)null),
+                        v => System.Text.Json.JsonSerializer.Deserialize<List<string>>(v, (System.Text.Json.JsonSerializerOptions?)null) ?? new List<string>()
+                    )
+                    .HasColumnType("nvarchar(max)");
+                entity.HasOne(e => e.Ka2Project)
+                    .WithMany(k => k.Disseminations)
                     .HasForeignKey(e => e.Ka2ProjectId)
                     .OnDelete(DeleteBehavior.Cascade);
             });

@@ -1,5 +1,6 @@
 using EduExcellence.Application.DTOs.Meeting;
 using EduExcellence.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EduExcellence.WebApi.Controllers
@@ -9,10 +10,12 @@ namespace EduExcellence.WebApi.Controllers
     public class MeetingController : ControllerBase
     {
         private readonly IMeetingService _meetingService;
+        private readonly ILogger<MeetingController> _logger;
 
-        public MeetingController(IMeetingService meetingService)
+        public MeetingController(IMeetingService meetingService, ILogger<MeetingController> logger)
         {
             _meetingService = meetingService;
+            _logger = logger;
         }
 
         // GET: api/Meeting/project/5
@@ -26,7 +29,8 @@ namespace EduExcellence.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error occurred while processing request");
+                return StatusCode(500, new { message = "An error occurred while processing your request" });
             }
         }
 
@@ -44,12 +48,14 @@ namespace EduExcellence.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error occurred while processing request");
+                return StatusCode(500, new { message = "An error occurred while processing your request" });
             }
         }
 
         // POST: api/Meeting
         [HttpPost]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<ActionResult<MeetingDto>> CreateMeeting([FromBody] CreateMeetingDto createMeetingDto)
         {
             try
@@ -62,12 +68,14 @@ namespace EduExcellence.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error occurred while processing request");
+                return StatusCode(500, new { message = "An error occurred while processing your request" });
             }
         }
 
         // PUT: api/Meeting/5
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<ActionResult<MeetingDto>> UpdateMeeting(int id, [FromBody] UpdateMeetingDto updateMeetingDto)
         {
             try
@@ -87,12 +95,14 @@ namespace EduExcellence.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error occurred while processing request");
+                return StatusCode(500, new { message = "An error occurred while processing your request" });
             }
         }
 
         // DELETE: api/Meeting/5
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<ActionResult> DeleteMeeting(int id)
         {
             try
@@ -105,7 +115,8 @@ namespace EduExcellence.WebApi.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                _logger.LogError(ex, "Error occurred while processing request");
+                return StatusCode(500, new { message = "An error occurred while processing your request" });
             }
         }
     }

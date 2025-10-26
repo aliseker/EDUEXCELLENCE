@@ -13,6 +13,11 @@ namespace EduExcellence.Domain.Entities
         public string? Description { get; set; }
 
         public List<HeroItem> Items { get; set; } = new List<HeroItem>();
+        
+        // Anasayfada gösterilip gösterilmeyeceğini kontrol eder (sadece 1 tane true olabilir)
+        public bool IsDisplayedOnHomepage { get; set; } = false;
+        
+        // BaseEntity'deki IsActive soft delete için kullanılır (true = aktif, false = silinmiş)
     }
 
     public class HeroItem : BaseEntity

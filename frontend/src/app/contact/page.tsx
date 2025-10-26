@@ -43,6 +43,17 @@ const ContactPage = () => {
   const [socialMedias, setSocialMedias] = useState<SocialMedia[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  });
+  const [formLoading, setFormLoading] = useState(false);
+  const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
   // Fetch contacts from API
   const fetchContacts = async () => {
@@ -96,6 +107,61 @@ const ContactPage = () => {
     };
     loadData();
   }, []);
+
+  // Handle form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+    if (formStatus.type) {
+      setFormStatus({ type: null, message: '' });
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+    setFormStatus({ type: null, message: '' });
+
+    try {
+      const response = await fetch('https://localhost:7166/api/Contact/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        setFormStatus({ 
+          type: 'success', 
+          message: 'Mesajınız başarıyla gönderildi! En kısa sürede size geri dönüş yapacağız.' 
+        });
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+      } else {
+        setFormStatus({ 
+          type: 'error', 
+          message: 'Mesaj gönderilemedi. Lütfen tekrar deneyin veya doğrudan iletişime geçin.' 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending email:', error);
+      setFormStatus({ 
+        type: 'error', 
+        message: 'Bir hata oluştu. Lütfen tekrar deneyin veya doğrudan email ya da telefon ile iletişime geçin.' 
+      });
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
   // Parse contact details
   const getContactDetails = (type: string) => {
@@ -192,17 +258,162 @@ const ContactPage = () => {
     }
   ];
 
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       <Navbar />
       
+      {/* Contact Form Hero Section */}
+      <div className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+              Bize Ulaşın
+            </h1>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              Erasmus+ eğitim programları hakkındaki sorularınız için bizimle iletişime geçin.
+              Uzman ekibimiz size yardımcı olmaya hazır.
+            </p>
+          </div>
+
+          {/* Contact Form */}
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-10 border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                Mesaj Gönderin
+              </h2>
+
+              {formStatus.type && (
+                <div className={`mb-6 p-4 rounded-lg ${
+                  formStatus.type === 'success' 
+                    ? 'bg-green-50 border border-green-200 text-green-800' 
+                    : 'bg-red-50 border border-red-200 text-red-800'
+                }`}>
+                  <div className="flex items-center">
+                    {formStatus.type === 'success' ? (
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    <p>{formStatus.message}</p>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    Ad Soyad *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    required
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    placeholder="Adınız ve soyadınız"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    E-posta Adresi *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    placeholder="ornek@email.com"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    Telefon Numarası
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    placeholder="+90 555 555 55 55"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                    Konu *
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    name="subject"
+                    required
+                    value={formData.subject}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    placeholder="Mesajınızın konusu"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    Mesajınız *
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    required
+                    rows={6}
+                    value={formData.message}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none text-gray-900 placeholder-gray-400"
+                    placeholder="Lütfen mesajınızı detaylı bir şekilde yazın..."
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={formLoading}
+                  className={`w-full py-4 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${
+                    formLoading 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transform hover:scale-105'
+                  }`}
+                >
+                  {formLoading ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Gönderiliyor...
+                    </span>
+                  ) : (
+                    'Mesajı Gönder'
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Contact Information Section */}
       <div className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            {/* Contact Information */}
             <div className="space-y-12">
               <div className="text-center">
                 <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -227,8 +438,7 @@ const ContactPage = () => {
                           {info.title}
                         </h3>
                         <div className="space-y-3">
-                          {info.details.map((detail, detailIndex) => {
-                            // Check if it's a phone number or email
+                          {info.details.map((detail: string, detailIndex: number) => {
                             const isPhone = /^[\+]?[0-9\s\-\(\)]+$/.test(detail.trim());
                             const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(detail.trim());
                             
@@ -236,7 +446,7 @@ const ContactPage = () => {
                               return (
                                 <a 
                                   key={detailIndex} 
-                                  href={`tel:${detail.replace(/[^\d+]/g, '')}`}
+                                  href={'tel:' + detail.replace(/[^\d+]/g, '')}
                                   className="text-gray-600 hover:text-blue-600 transition-colors duration-200 cursor-pointer block text-lg font-medium"
                                 >
                                   {detail}
@@ -246,7 +456,7 @@ const ContactPage = () => {
                               return (
                                 <a 
                                   key={detailIndex} 
-                                  href={`mailto:${detail}`}
+                                  href={'mailto:' + detail}
                                   className="text-gray-600 hover:text-blue-600 transition-colors duration-200 cursor-pointer block text-lg font-medium"
                                 >
                                   {detail}
@@ -267,8 +477,8 @@ const ContactPage = () => {
                 )}
               </div>
 
-            {/* Social Media */}
-            <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl p-8 border border-gray-200">
+              {/* Social Media */}
+              <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl p-8 border border-gray-200">
                 <div className="text-center mb-8">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +502,7 @@ const ContactPage = () => {
                         rel="noopener noreferrer" 
                         className="group flex flex-col items-center p-4 bg-white hover:bg-gray-50 transition-all duration-200 border border-gray-200 rounded-xl hover:shadow-lg transform hover:-translate-y-1"
                       >
-                        <div className={`w-16 h-16 ${getPlatformColor(socialMedia.platform)} rounded-xl flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                        <div className={'w-16 h-16 ' + getPlatformColor(socialMedia.platform) + ' rounded-xl flex items-center justify-center text-white mb-3 group-hover:scale-110 transition-transform duration-300'}>
                           <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
                             <path d={getPlatformIcon(socialMedia.platform)} />
                           </svg>
@@ -378,7 +588,7 @@ const ContactPage = () => {
                   
                   <div className="flex items-center mb-4">
                     {Array.from({ length: 5 }, (_, i) => (
-                      <svg key={i} className={`w-5 h-5 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                      <svg key={i} className={'w-5 h-5 ' + (i < review.rating ? 'text-yellow-400' : 'text-gray-300')} fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     ))}
@@ -412,7 +622,7 @@ const ContactPage = () => {
               Konumumuz
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              EduExcellence Eğitim Merkezi, Antalya'nın merkezinde, 
+              EduExcellence Eğitim Merkezi, Antalya&apos;nın merkezinde, 
               kolay ulaşılabilir bir konumda bulunmaktadır.
             </p>
           </div>
