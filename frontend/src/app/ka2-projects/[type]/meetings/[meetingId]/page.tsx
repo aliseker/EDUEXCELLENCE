@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
+import { API_BASE_URL } from '@/config/api';
 
 interface Meeting {
   id: number;
@@ -28,7 +29,7 @@ export default function MeetingDetailPage() {
   useEffect(() => {
     const fetchMeeting = async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/Meeting/' + meetingId);
+        const response = await fetch(`${API_BASE_URL}/Meeting/${meetingId}`);
         if (response.ok) {
           const data = await response.json();
           setMeeting(data);

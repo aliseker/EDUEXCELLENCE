@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { API_BASE_URL, BACKEND_BASE_URL } from '@/config/api';
 
 interface Meeting {
   id: number;
@@ -41,7 +42,7 @@ export default function MeetingsPage() {
 
       try {
         console.log('Fetching meetings for project:', projectId);
-        const response = await fetch('https://localhost:7166/api/Meeting/project/' + projectId);
+        const response = await fetch(`${API_BASE_URL}/Meeting/project/${projectId}`);
         console.log('Response status:', response.status);
         
         if (response.ok) {
@@ -226,7 +227,7 @@ export default function MeetingsPage() {
                   <div className="flex-1">
                     {selectedImage && (
                       <img
-                        src={selectedImage.startsWith('http') ? selectedImage : 'https://localhost:7166' + selectedImage}
+                        src={selectedImage.startsWith('http') ? selectedImage : `${BACKEND_BASE_URL}${selectedImage}`}
                         alt={currentMeeting.title}
                         className="w-full h-auto max-h-[500px] object-cover rounded-xl shadow-lg"
                       />
@@ -267,7 +268,7 @@ export default function MeetingsPage() {
                             }`}
                           >
                             <img
-                              src={image.startsWith('http') ? image : 'https://localhost:7166' + image}
+                              src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
                               alt={`Photo ${index + 1}`}
                               className="w-full h-full object-cover"
                             />

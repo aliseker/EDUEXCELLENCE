@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { API_BASE_URL } from '@/config/api';
 
 interface BlogItem {
   id: number;
@@ -32,7 +33,7 @@ const NewsPage = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/Blogs');
+        const response = await fetch(`${API_BASE_URL}/Blogs`);
         if (response.ok) {
           const apiBlogs = await response.json();
           console.log('API Response:', apiBlogs); // Debug için

@@ -133,16 +133,17 @@ const Footer = () => {
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center">
-              <div className="h-8 w-8 rounded-lg overflow-hidden">
+              <div className="h-12 w-12 bg-white rounded-lg overflow-hidden flex items-center justify-center">
                 <Image
                   src="/images/logo.jpg"
                   alt="EduExcellence Logo"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
+                  width={48}
+                  height={48}
+                  className="w-full h-full object-contain"
+                  unoptimized
                 />
               </div>
-              <span className="ml-2 text-xl font-bold">EduExcellence</span>
+              <span className="ml-3 text-xl font-bold">EduExcellence</span>
             </div>
             <p className="text-gray-300 text-sm leading-relaxed">
               Take your career to the next level with international education opportunities. 

@@ -7,6 +7,7 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/config/api';
 
 interface NewsItem {
   id: number;
@@ -101,7 +102,7 @@ export default function NewsDetailPage() {
     const fetchNewsItem = async () => {
       try {
         const newsId = params.id as string;
-        const response = await fetch('https://localhost:7166/api/Blogs/' + newsId);
+        const response = await fetch(`${API_BASE_URL}/Blogs/${newsId}`);
         
         if (response.ok) {
           const data = await response.json();

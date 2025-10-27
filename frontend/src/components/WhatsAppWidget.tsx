@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/config/api';
 
 interface WhatsAppSettings {
   phoneNumber: string;
@@ -18,7 +19,7 @@ export default function WhatsAppWidget() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('https://localhost:7166/api/Settings/whatsapp');
+      const response = await fetch(`${API_BASE_URL}/Settings/whatsapp`);
       if (response.ok) {
         const data = await response.json();
         setSettings(data);

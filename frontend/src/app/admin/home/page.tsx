@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { authenticatedFetch } from '@/utils/authenticatedFetch';
+import { API_BASE_URL, BACKEND_BASE_URL } from '@/config/api';
 
 export default function AdminHome() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -140,7 +141,7 @@ export default function AdminHome() {
       if (adminAuth === 'true' && accessToken) {
         try {
           // Validate access token with backend
-          const response = await authenticatedFetch('https://localhost:7166/api/auth/validate', {
+          const response = await authenticatedFetch(`${API_BASE_URL}/auth/validate`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -179,7 +180,7 @@ export default function AdminHome() {
   const fetchData = async () => {
     try {
       // Fetch blogs
-      const blogsResponse = await authenticatedFetch('https://localhost:7166/api/Blogs');
+      const blogsResponse = await authenticatedFetch(`${API_BASE_URL}/Blogs`);
       if (blogsResponse.ok) {
         const blogsData = await blogsResponse.json();
         // Sort by date descending (newest first)
@@ -190,7 +191,7 @@ export default function AdminHome() {
       }
 
       // Fetch courses
-        const coursesResponse = await authenticatedFetch('https://localhost:7166/api/Courses');
+        const coursesResponse = await authenticatedFetch(`${API_BASE_URL}/Courses`);
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
         // Sort by date descending (newest first)
@@ -203,7 +204,7 @@ export default function AdminHome() {
       }
 
       // Fetch KA2 projects
-      const ka2Response = await authenticatedFetch('https://localhost:7166/api/Ka2');
+      const ka2Response = await authenticatedFetch(`${API_BASE_URL}/Ka2`);
       if (ka2Response.ok) {
         const ka2Data = await ka2Response.json();
         // Sort by date descending (newest first)
@@ -214,7 +215,7 @@ export default function AdminHome() {
       }
 
       // Fetch contacts
-      const contactsResponse = await authenticatedFetch('https://localhost:7166/api/Contact');
+      const contactsResponse = await authenticatedFetch(`${API_BASE_URL}/Contact`);
       if (contactsResponse.ok) {
         const contactsData = await contactsResponse.json();
         
@@ -229,7 +230,7 @@ export default function AdminHome() {
       }
 
       // Fetch WhatsApp settings
-      const whatsappResponse = await authenticatedFetch('https://localhost:7166/api/Settings/whatsapp');
+      const whatsappResponse = await authenticatedFetch(`${API_BASE_URL}/Settings/whatsapp`);
       if (whatsappResponse.ok) {
         const whatsappData = await whatsappResponse.json();
         setWhatsappSettings(whatsappData);
@@ -504,7 +505,7 @@ export default function AdminHome() {
       ];
 
       // API çağrısı
-      const response = await authenticatedFetch('https://localhost:7166/api/Contact/bulk-update', {
+      const response = await authenticatedFetch(`${API_BASE_URL}/Contact/bulk-update`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -594,7 +595,7 @@ export default function AdminHome() {
     }
 
     try {
-      const response = await authenticatedFetch('https://localhost:7166/api/auth/change-password', {
+      const response = await authenticatedFetch(`${API_BASE_URL}/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -680,7 +681,7 @@ export default function AdminHome() {
             case 'blog':
               console.log('Deleting blog with id:', id);
               
-              const blogResponse = await authenticatedFetch(`https://localhost:7166/api/Blogs/${id}`, {
+              const blogResponse = await authenticatedFetch(`${API_BASE_URL}/Blogs/${id}`, {
                 method: 'DELETE'
               });
               
@@ -701,7 +702,7 @@ export default function AdminHome() {
             case 'ka1course':
               console.log('Deleting course with id:', id);
               
-              const courseResponse = await authenticatedFetch(`https://localhost:7166/api/Courses/${id}`, {
+              const courseResponse = await authenticatedFetch(`${API_BASE_URL}/Courses/${id}`, {
                 method: 'DELETE'
               });
               
@@ -723,7 +724,7 @@ export default function AdminHome() {
             case 'ka2project':
               console.log('Deleting KA2 project with id:', id);
               
-              const ka2Response = await authenticatedFetch(`https://localhost:7166/api/Ka2/${id}`, {
+              const ka2Response = await authenticatedFetch(`${API_BASE_URL}/Ka2/${id}`, {
                 method: 'DELETE'
               });
               
@@ -890,7 +891,7 @@ export default function AdminHome() {
             const updateData = { ...blogData, id: editingItem.id };
             console.log('Updating blog with data:', updateData);
             
-            const response = await authenticatedFetch(`https://localhost:7166/api/Blogs/${editingItem.id}`, {
+            const response = await authenticatedFetch(`${API_BASE_URL}/Blogs/${editingItem.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json'
@@ -910,7 +911,7 @@ export default function AdminHome() {
               alert('Blog update failed: ' + errorText);
             }
           } else {
-            const response = await authenticatedFetch('https://localhost:7166/api/Blogs', {
+            const response = await authenticatedFetch(`${API_BASE_URL}/Blogs`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -983,7 +984,7 @@ export default function AdminHome() {
             console.log('StartDate type:', typeof updateData.startDate, 'Value:', updateData.startDate);
             console.log('EndDate type:', typeof updateData.endDate, 'Value:', updateData.endDate);
             
-            const response = await authenticatedFetch(`https://localhost:7166/api/Courses/${editingItem.id}`, {
+            const response = await authenticatedFetch(`${API_BASE_URL}/Courses/${editingItem.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json'
@@ -1009,7 +1010,7 @@ export default function AdminHome() {
             }
           } else {
             console.log('Creating course with data:', courseData);
-            const response = await authenticatedFetch('https://localhost:7166/api/Courses', {
+            const response = await authenticatedFetch(`${API_BASE_URL}/Courses`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -1052,7 +1053,7 @@ export default function AdminHome() {
             const updateData = { ...projectData, id: editingItem.id };
             console.log('Updating KA2 project with data:', updateData);
             
-            const response = await authenticatedFetch(`https://localhost:7166/api/Ka2/${editingItem.id}`, {
+            const response = await authenticatedFetch(`${API_BASE_URL}/Ka2/${editingItem.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json'
@@ -1072,7 +1073,7 @@ export default function AdminHome() {
               alert('KA2 update failed: ' + errorText);
             }
           } else {
-            const response = await authenticatedFetch('https://localhost:7166/api/Ka2', {
+            const response = await authenticatedFetch(`${API_BASE_URL}/Ka2`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -1112,7 +1113,7 @@ export default function AdminHome() {
     setShowMeetingModal(true);
     
     try {
-      const response = await authenticatedFetch(`https://localhost:7166/api/Meeting/project/${projectId}`);
+      const response = await authenticatedFetch(`${API_BASE_URL}/Meeting/project/${projectId}`);
       if (response.ok) {
         const meetings = await response.json();
         setCurrentProjectMeetings(meetings);
@@ -1141,7 +1142,7 @@ export default function AdminHome() {
     
     // Preview için absolute URL'ye çevir
     const imagePreviews = (meeting.images || []).map((img: string) => 
-      img.startsWith('http') ? img : `https://localhost:7166${img}`
+      img.startsWith('http') ? img : `${BACKEND_BASE_URL}${img}`
     );
     setMeetingImagePreviews(imagePreviews);
     
@@ -1206,7 +1207,7 @@ export default function AdminHome() {
           imageFormData.append('files', file);
         });
 
-        const uploadResponse = await authenticatedFetch('https://localhost:7166/api/Upload/multiple', {
+        const uploadResponse = await authenticatedFetch(`${API_BASE_URL}/Upload/multiple`, {
           method: 'POST',
           body: imageFormData,
         });
@@ -1226,6 +1227,10 @@ export default function AdminHome() {
         .filter((img: string) => img && img.trim() !== '') // Boş olanları temizle
         .map((img: string) => {
           // Eğer absolute URL ise relative'e çevir
+          const baseUrl = BACKEND_BASE_URL || 'https://localhost:7166';
+          if (img.startsWith(baseUrl)) {
+            return img.replace(baseUrl, '');
+          }
           if (img.startsWith('https://localhost:7166')) {
             return img.replace('https://localhost:7166', '');
           }
@@ -1247,7 +1252,7 @@ export default function AdminHome() {
           images: allImages
         };
 
-        const response = await authenticatedFetch(`https://localhost:7166/api/Meeting/${editingMeeting.id}`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/Meeting/${editingMeeting.id}`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json'
@@ -1278,7 +1283,7 @@ export default function AdminHome() {
           ka2ProjectId: selectedProjectId
         };
 
-        const response = await authenticatedFetch('https://localhost:7166/api/Meeting', {
+        const response = await authenticatedFetch(`${API_BASE_URL}/Meeting`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json'
@@ -1324,7 +1329,7 @@ export default function AdminHome() {
       'Bu meeting\'i silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
       async () => {
         try {
-          const response = await authenticatedFetch(`https://localhost:7166/api/Meeting/${meetingId}`, {
+          const response = await authenticatedFetch(`${API_BASE_URL}/Meeting/${meetingId}`, {
             method: 'DELETE',
           });
 
@@ -1350,7 +1355,7 @@ export default function AdminHome() {
     setShowDisseminationModal(true);
     
     try {
-      const response = await authenticatedFetch(`https://localhost:7166/api/Dissemination/project/${projectId}`);
+      const response = await authenticatedFetch(`${API_BASE_URL}/Dissemination/project/${projectId}`);
       if (response.ok) {
         const disseminations = await response.json();
         setCurrentProjectDisseminations(disseminations);
@@ -1377,7 +1382,7 @@ export default function AdminHome() {
     });
     
     const imagePreviews = (dissemination.images || []).map((img: string) => 
-      img.startsWith('http') ? img : `https://localhost:7166${img}`
+      img.startsWith('http') ? img : `${BACKEND_BASE_URL}${img}`
     );
     setDisseminationImagePreviews(imagePreviews);
     setDisseminationImages([]);
@@ -1433,7 +1438,7 @@ export default function AdminHome() {
           imageFormData.append('files', file);
         });
 
-        const uploadResponse = await authenticatedFetch('https://localhost:7166/api/Upload/multiple', {
+        const uploadResponse = await authenticatedFetch(`${API_BASE_URL}/Upload/multiple`, {
           method: 'POST',
           body: imageFormData,
         });
@@ -1450,6 +1455,10 @@ export default function AdminHome() {
       const existingImages = (editingDissemination?.images || [])
         .filter((img: string) => img && img.trim() !== '')
         .map((img: string) => {
+          const baseUrl = BACKEND_BASE_URL || 'https://localhost:7166';
+          if (img.startsWith(baseUrl)) {
+            return img.replace(baseUrl, '');
+          }
           if (img.startsWith('https://localhost:7166')) {
             return img.replace('https://localhost:7166', '');
           }
@@ -1469,7 +1478,7 @@ export default function AdminHome() {
           images: allImages
         };
 
-        const response = await authenticatedFetch(`https://localhost:7166/api/Dissemination/${editingDissemination.id}`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/Dissemination/${editingDissemination.id}`, {
           method: 'PUT',
           headers: { 
             'Content-Type': 'application/json'
@@ -1499,7 +1508,7 @@ export default function AdminHome() {
           ka2ProjectId: selectedDisseminationProjectId
         };
 
-        const response = await authenticatedFetch('https://localhost:7166/api/Dissemination', {
+        const response = await authenticatedFetch(`${API_BASE_URL}/Dissemination`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json'
@@ -1532,7 +1541,7 @@ export default function AdminHome() {
       'Bu dissemination\'ı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
       async () => {
         try {
-          const response = await authenticatedFetch(`https://localhost:7166/api/Dissemination/${disseminationId}`, {
+          const response = await authenticatedFetch(`${API_BASE_URL}/Dissemination/${disseminationId}`, {
             method: 'DELETE',
           });
 
@@ -1563,7 +1572,7 @@ export default function AdminHome() {
     };
 
     try {
-      const response = await authenticatedFetch('https://localhost:7166/api/Settings/whatsapp', {
+      const response = await authenticatedFetch(`${API_BASE_URL}/Settings/whatsapp`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
@@ -3379,7 +3388,7 @@ export default function AdminHome() {
                           {meeting.images.slice(0, 6).map((image: string, idx: number) => (
                             <img
                               key={idx}
-                              src={image.startsWith('http') ? image : `https://localhost:7166${image}`}
+                              src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
                               alt={`Meeting ${idx + 1}`}
                               className="w-full h-20 object-cover rounded-lg"
                             />
@@ -3575,7 +3584,7 @@ export default function AdminHome() {
                           {dissemination.images.slice(0, 6).map((image: string, idx: number) => (
                             <img
                               key={idx}
-                              src={image.startsWith('http') ? image : `https://localhost:7166${image}`}
+                              src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
                               alt={`Dissemination ${idx + 1}`}
                               className="w-full h-20 object-cover rounded-lg"
                             />

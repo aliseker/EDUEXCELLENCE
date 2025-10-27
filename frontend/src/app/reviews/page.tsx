@@ -165,9 +165,14 @@ export default function ReviewsPage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              🎥 Video <span className="text-purple-600">Testimonials</span>
-            </h2>
+            <div className="inline-flex items-center mb-4">
+              <svg className="w-8 h-8 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
+                Video <span className="text-blue-600">Testimonials</span>
+              </h2>
+            </div>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Watch our customers' experiences in video format
             </p>
@@ -176,13 +181,13 @@ export default function ReviewsPage() {
           {approvedVideos.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
               {approvedVideos.map((video) => (
-                <div key={video.id} className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200">
+                <div key={video.id} className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-200 overflow-hidden">
                   {/* Video */}
-                  <div className="relative aspect-video bg-gray-200">
+                  <div className="w-full" style={{ height: '0', paddingBottom: '56.25%', position: 'relative' }}>
                     <iframe
                       src={video.videoUrl}
                       title={video.title}
-                      className="w-full h-full"
+                      style={{ position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', border: 'none' }}
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     ></iframe>

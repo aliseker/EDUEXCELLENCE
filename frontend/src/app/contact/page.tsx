@@ -3,6 +3,7 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/config/api';
 
 interface Contact {
   id: number;
@@ -65,7 +66,7 @@ const ContactPage = () => {
   // Fetch contacts from API
   const fetchContacts = async () => {
     try {
-      const response = await fetch('https://localhost:7166/api/Contact/primary');
+      const response = await fetch(`${API_BASE_URL}/Contact/primary`);
       if (response.ok) {
         const data = await response.json();
         setContacts(data);
@@ -80,7 +81,7 @@ const ContactPage = () => {
   // Fetch social media from API
   const fetchSocialMedias = async () => {
     try {
-      const response = await fetch('https://localhost:7166/api/socialmedia/active');
+      const response = await fetch(`${API_BASE_URL}/socialmedia/active`);
       if (response.ok) {
         const data = await response.json();
         setSocialMedias(data);
@@ -95,7 +96,7 @@ const ContactPage = () => {
   // Fetch reviews from API
   const fetchReviews = async () => {
     try {
-      const response = await fetch('https://localhost:7166/api/Review/active');
+      const response = await fetch(`${API_BASE_URL}/Review/active`);
       if (response.ok) {
         const data = await response.json();
         setReviews(data.slice(0, 3)); // En fazla 3 tane göster
@@ -150,8 +151,9 @@ const ContactPage = () => {
       return ''; // Phone is optional
     }
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
-    if (!/^(\+90|0)?5\d{9}$/.test(cleanPhone)) {
-      return 'Please enter a valid Turkish phone number (e.g.: +90 555 555 55 55)';
+    // International phone number: 7-15 digits, optional + at start
+    if (!/^\+?\d{7,15}$/.test(cleanPhone)) {
+      return 'Please enter a valid phone number (e.g.: +90 555 555 55 55, +1 555 123 4567)';
     }
     return '';
   };
@@ -260,7 +262,7 @@ const ContactPage = () => {
     setFormLoading(true);
 
     try {
-      const response = await fetch('https://localhost:7166/api/Contact/send-email', {
+      const response = await fetch(`${API_BASE_URL}/Contact/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -5,6 +5,8 @@
  * Refresh Token: 30 days in localStorage
  */
 
+import { API_BASE_URL } from '@/config/api';
+
 class TokenManager {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
@@ -126,7 +128,7 @@ class TokenManager {
 
     this.refreshPromise = (async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/auth/refresh', {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

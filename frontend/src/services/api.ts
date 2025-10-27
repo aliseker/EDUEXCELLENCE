@@ -1,9 +1,11 @@
+import { API_BASE_URL } from '@/config/api';
+
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
 
   constructor() {
-    this.baseURL = 'https://localhost:7166/api';
+    this.baseURL = API_BASE_URL;
     // Get token from localStorage on initialization
     if (typeof window !== 'undefined') {
       this.token = localStorage.getItem('accessToken');

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/config/api';
 
 interface Review {
   id: number;
@@ -33,7 +34,7 @@ const ReviewsSection = () => {
   const fetchReviews = async () => {
     try {
       console.log('Fetching reviews from API...');
-      const response = await fetch('https://localhost:7166/api/Review/active');
+      const response = await fetch(`${API_BASE_URL}/Review/active`);
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
       
@@ -89,11 +90,16 @@ const ReviewsSection = () => {
 
   if (loading) {
     return (
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-50 min-h-[500px]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading reviews...</p>
+          <div className="animate-pulse">
+            <div className="h-10 bg-gray-300 rounded w-64 mx-auto mb-4"></div>
+            <div className="h-6 bg-gray-300 rounded w-96 mx-auto mb-12"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="h-80 bg-gray-300 rounded-xl"></div>
+              <div className="h-80 bg-gray-300 rounded-xl"></div>
+              <div className="h-80 bg-gray-300 rounded-xl"></div>
+            </div>
           </div>
         </div>
       </section>
@@ -105,7 +111,7 @@ const ReviewsSection = () => {
   }
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gray-50 min-h-[500px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">

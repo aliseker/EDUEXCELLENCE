@@ -4,7 +4,7 @@ import Image from 'next/image';
 
 const WhoWeAre = () => {
   return (
-    <section className="py-20 bg-gray-50 relative overflow-hidden">
+    <section className="py-20 bg-gray-50 relative overflow-hidden min-h-[600px]">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0" style={{
@@ -16,7 +16,7 @@ const WhoWeAre = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           {/* Left Column - Content */}
-          <div className="space-y-8">
+          <div className="flex flex-col gap-8 min-h-[400px]">
             <div>
               <h2 className="text-5xl font-bold text-gray-900 mb-6">
                 Who We{' '}
@@ -53,6 +53,7 @@ const WhoWeAre = () => {
                   height={600}
                   className="w-full h-auto object-cover object-center"
                   style={{ objectPosition: 'center 30%' }}
+                  priority
                 />
                 {/* Gradient Overlay */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-bl-3xl"></div>

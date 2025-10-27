@@ -4,6 +4,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import HeroAnimation from './HeroAnimation';
 import { useEffect, useState } from 'react';
+import { API_BASE_URL } from '@/config/api';
+
+// Static fallback content for initial render (prevents LCP delay)
+const FALLBACK_HERO = {
+  id: 0,
+  title: "Transform Your Future with Erasmus+ Education Programs",
+  description: "Unlock international education opportunities and elevate your career with KA1, KA2, and KA3 programs across Europe.",
+  items: [],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
 
 interface HeroData {
   id: number;
@@ -19,14 +30,14 @@ interface HeroData {
 }
 
 const Hero = () => {
-  const [heroData, setHeroData] = useState<HeroData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Start with fallback data for immediate LCP
+  const [heroData, setHeroData] = useState<HeroData>(FALLBACK_HERO as HeroData);
 
   useEffect(() => {
     const fetchHeroData = async () => {
       try {
         // Anasayfa için direkt fetch kullan - token gerektirmeyen public endpoint
-        const response = await fetch('https://localhost:7166/api/Hero/active', {
+        const response = await fetch(`${API_BASE_URL}/Hero/active`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -41,40 +52,14 @@ const Hero = () => {
         setHeroData(data);
       } catch (error) {
         console.error('Error fetching hero data:', error);
-        // Fallback to default content if API fails
-        setHeroData({
-          id: 1,
-          title: 'Discover the World with Erasmus',
-          description: 'Take your career to the next level with international education opportunities. Study in Europe with KA1 and KA2 programs.',
-          items: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        });
-      } finally {
-        setLoading(false);
+        // Keep fallback data on error
       }
     };
 
-    fetchHeroData();
+    // Delay API call slightly to prioritize initial render
+    const timer = setTimeout(fetchHeroData, 100);
+    return () => clearTimeout(timer);
   }, []);
-
-  if (loading) {
-    return (
-      <section className="relative bg-blue-50 overflow-hidden">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <div className="animate-pulse">
-            <div className="h-16 bg-gray-300 rounded mb-4"></div>
-            <div className="h-6 bg-gray-300 rounded mb-8"></div>
-            <div className="h-12 bg-gray-300 rounded w-48"></div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (!heroData) {
-    return null;
-  }
 
   // Parse title to separate main title and highlighted part
   const titleParts = heroData.title.split(' with ');
@@ -82,19 +67,21 @@ const Hero = () => {
   const highlightedTitle = titleParts[1] ? `with ${titleParts[1]}` : '';
 
   return (
-        <section className="relative bg-blue-50 overflow-hidden">
-      {/* Background Animation */}
-      <HeroAnimation />
+        <section className="relative bg-blue-50 overflow-hidden min-h-[600px] lg:min-h-[700px] isolate z-0">
+      {/* Background Animation - Sadece Hero içinde kalır */}
+      <div className="absolute inset-0 overflow-hidden -z-10">
+        <HeroAnimation />
+      </div>
       
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-30">
+      <div className="absolute inset-0 opacity-30 -z-10">
         <div className="absolute inset-0" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
           backgroundRepeat: 'repeat'
         }}></div>
       </div>
       
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16" style={{ zIndex: 2 }}>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 z-10">
         {/* Full Width Title Section */}
         <div className="text-center mb-6">
           <h1 className="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
@@ -114,7 +101,7 @@ const Hero = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left Column - Content */}
-          <div className="space-y-8 overflow-hidden">
+          <div className="flex flex-col gap-8 overflow-hidden min-h-[400px]">
             {/* Dynamic Items */}
             {heroData.items && heroData.items.length > 0 && (
               <div className="py-2">

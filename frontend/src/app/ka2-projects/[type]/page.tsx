@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Image from 'next/image';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/config/api';
 
 interface Ka2Project {
   id: number;
@@ -127,7 +128,7 @@ export default function KA2ProjectPage() {
       try {
         console.log(`Fetching projects for type: ${projectType.toUpperCase()}`);
         // Fetch all projects and filter by type
-        const response = await fetch('https://localhost:7166/api/Ka2');
+        const response = await fetch(`${API_BASE_URL}/Ka2`);
         console.log(`Response status: ${response.status}`);
         
         if (response.ok) {

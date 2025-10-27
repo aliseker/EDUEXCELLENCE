@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/config/api';
 
 interface SocialMedia {
   id: number;
@@ -89,7 +90,7 @@ export default function SocialMediaManagement() {
   const fetchSocialMedias = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('https://localhost:7166/api/socialmedia', {
+      const response = await fetch(`${API_BASE_URL}/socialmedia`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -115,8 +116,8 @@ export default function SocialMediaManagement() {
     try {
       const token = localStorage.getItem('accessToken');
       const url = editingItem 
-        ? `https://localhost:7166/api/socialmedia/${editingItem.id}`
-        : 'https://localhost:7166/api/socialmedia';
+        ? `${API_BASE_URL}/socialmedia/${editingItem.id}`
+        : `${API_BASE_URL}/socialmedia`;
       
       const method = editingItem ? 'PUT' : 'POST';
       const body = editingItem 
@@ -170,7 +171,7 @@ export default function SocialMediaManagement() {
       async () => {
         try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`https://localhost:7166/api/socialmedia/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/socialmedia/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -197,7 +198,7 @@ export default function SocialMediaManagement() {
   const handleToggleActive = async (id: number) => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch(`https://localhost:7166/api/socialmedia/${id}/toggle-active`, {
+      const response = await fetch(`${API_BASE_URL}/socialmedia/${id}/toggle-active`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

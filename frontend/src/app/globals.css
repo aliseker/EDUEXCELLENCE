@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+/* Critical CSS - Load first for better LCP */
+h1, h2, h3 {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-weight: 700;
+}
+
+/* Optimize text rendering */
+body {
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Scrollbar hide utility */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */
@@ -32,6 +45,36 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Prevent CLS - Reserve space for content */
+img, video, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prevent layout shifts from lazy loaded images */
+img[loading="lazy"] {
+  min-height: 200px;
+  background: #f3f4f6;
+}
+
+/* Prevent CLS from dynamic content - Force consistent spacing */
+.space-y-8 > * + *,
+.space-y-6 > * + *,
+.space-y-4 > * + *,
+.space-y-3 > * + * {
+  margin-top: var(--tw-space-y-reverse, 0) !important;
+}
+
+/* Stabilize layout during font loading */
+@font-face {
+  font-family: 'Geist-fallback';
+  src: local('Arial');
+  ascent-override: 95%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 100%;
 }
 
 /* Custom scrollbar */
@@ -67,10 +110,10 @@ body {
   overflow: hidden;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - REMOVED to prevent CLS */
+/* * {
   transition: all 0.2s ease-in-out;
-}
+} */
 
 /* Focus styles */
 *:focus {

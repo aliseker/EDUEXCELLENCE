@@ -152,7 +152,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-white shadow-xl sticky top-0 z-50 border-b border-gray-100">
+    <nav className="bg-white shadow-xl sticky top-0 z-[1000] border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-24">
           {/* Logo */}
@@ -165,6 +165,8 @@ const Navbar = () => {
                   width={48}
                   height={48}
                   className="w-full h-full object-cover"
+                  priority
+                  unoptimized
                 />
               </div>
               <div className="ml-3">
@@ -211,29 +213,25 @@ const Navbar = () => {
                   
                   {/* Dropdown Menu */}
                   {item.dropdown && activeDropdown === item.title && (
-                    <div className="absolute left-[-20px] mt-2 w-[520px] max-w-[90vw] bg-white rounded-xl shadow-2xl border border-gray-200 py-5 z-50">
-                      <div className="grid grid-cols-2 gap-3 px-5">
+                    <div className="absolute left-[-20px] mt-2 w-[560px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 py-6 z-[9999]">
+                      <div className="grid grid-cols-2 gap-4 px-6">
                         {item.dropdown.map((dropdownItem) => (
                           <Link
                             key={dropdownItem.title}
                             href={dropdownItem.href}
-                            className="group bg-gray-50 hover:bg-blue-50 rounded-lg p-3 transition-all duration-200 border border-gray-100 hover:border-blue-200 hover:shadow-md"
+                            className="group bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 rounded-xl p-4 transition-all duration-300 border border-gray-200 hover:border-blue-300 hover:shadow-lg"
                           >
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-12 h-12 bg-gradient-to-br ${dropdownItem.color || 'from-blue-500 to-purple-600'} rounded-lg flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
-                                <Image
-                                  src={dropdownItem.image}
-                                  alt={dropdownItem.title}
-                                  width={24}
-                                  height={24}
-                                  className="rounded-lg"
-                                />
+                            <div className="flex items-start space-x-3">
+                              <div className={`w-10 h-10 bg-gradient-to-br ${dropdownItem.color || 'from-blue-500 to-purple-600'} rounded-lg flex items-center justify-center flex-shrink-0 group-hover:shadow-xl transition-all duration-200`}>
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 truncate">
+                                <h3 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-200 mb-1">
                                   {dropdownItem.title}
                                 </h3>
-                                <p className="text-xs text-gray-500 mt-1 leading-tight line-clamp-2">
+                                <p className="text-xs text-gray-600 leading-snug line-clamp-2">
                                   {dropdownItem.description}
                                 </p>
                               </div>

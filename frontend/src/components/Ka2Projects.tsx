@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/config/api';
 
 interface Ka2Project {
   id: number;
@@ -34,7 +35,7 @@ const Ka2Projects = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/Ka2/active');
+        const response = await fetch(`${API_BASE_URL}/Ka2/active`);
         if (response.ok) {
           const apiProjects = await response.json();
           setProjects(apiProjects);

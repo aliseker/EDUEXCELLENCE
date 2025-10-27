@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import CourseCard from './CourseCard';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/config/api';
 
 interface Course {
   id: number;
@@ -229,7 +230,7 @@ const LatestCourses = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/Courses');
+        const response = await fetch(`${API_BASE_URL}/Courses`);
         if (response.ok) {
           const apiCourses = await response.json();
           

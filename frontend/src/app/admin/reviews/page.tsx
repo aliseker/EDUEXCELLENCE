@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/config/api';
 
 interface Review {
   id: number;
@@ -82,7 +83,7 @@ export default function ReviewsManagement() {
   const fetchReviews = async () => {
     try {
       const token = localStorage.getItem('accessToken');
-      const response = await fetch('https://localhost:7166/api/Review', {
+      const response = await fetch(`${API_BASE_URL}/Review`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -112,8 +113,8 @@ export default function ReviewsManagement() {
     try {
       const token = localStorage.getItem('accessToken');
       const url = editingReview 
-        ? `https://localhost:7166/api/Review/${editingReview.id}`
-        : 'https://localhost:7166/api/Review';
+        ? `${API_BASE_URL}/Review/${editingReview.id}`
+        : `${API_BASE_URL}/Review`;
       
       const method = editingReview ? 'PUT' : 'POST';
 
@@ -204,7 +205,7 @@ export default function ReviewsManagement() {
       async () => {
         try {
           const token = localStorage.getItem('accessToken');
-          const response = await fetch(`https://localhost:7166/api/Review/${id}`, {
+          const response = await fetch(`${API_BASE_URL}/Review/${id}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,

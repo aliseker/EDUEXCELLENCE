@@ -6,11 +6,18 @@ import { Toaster } from 'react-hot-toast';
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: 'block', // Immediately show text with fallback font (better LCP)
+  adjustFontFallback: true, // Fallback font metriklerini ayarla
+  preload: true, // Font'u önceden yükle
+  weight: ['400', '700'], // Only load needed weights
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: 'swap', // Font yüklenirken CLS'yi önler
+  adjustFontFallback: true, // Fallback font metriklerini ayarla
+  preload: true, // Font'u önceden yükle
 });
 
 export const metadata: Metadata = {
@@ -25,6 +32,30 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
+      <head>
+        {/* Preconnect to API */}
+        <link rel="preconnect" href="https://localhost:7166" />
+        <link rel="dns-prefetch" href="https://localhost:7166" />
+        <link rel="preconnect" href="https://edu-excellence.net" />
+        <link rel="dns-prefetch" href="https://edu-excellence.net" />
+        
+        {/* Optimize resource loading */}
+        <link rel="preload" as="style" href="/_next/static/css/app/layout.css" />
+        
+        {/* Reduce font flash */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            @font-face {
+              font-family: 'GeistFallback';
+              src: local('Arial');
+              ascent-override: 95%;
+              descent-override: 25%;
+              line-gap-override: 0%;
+              size-adjust: 107%;
+            }
+          `
+        }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

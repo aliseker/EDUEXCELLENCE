@@ -27,18 +27,10 @@ const BlogSection = () => {
         const response = await fetch('https://localhost:7166/api/Blogs');
         if (response.ok) {
           const data = await response.json();
-          
-          // Tarihe göre en yeniden en eskiye sırala
-          data.sort((a: any, b: any) => {
-            const dateA = new Date(a.publishedAt || a.createdAt).getTime();
-            const dateB = new Date(b.publishedAt || b.createdAt).getTime();
-            return dateB - dateA;
-          });
-          
           // Eğer featured blog yoksa, tüm blog'ları al
           let featuredBlogs = data.filter((blog: any) => blog.isFeatured);
           if (featuredBlogs.length === 0) {
-            featuredBlogs = data.slice(0, 4); // İlk 4 blog'u al (en yeni olanlar)
+            featuredBlogs = data.slice(0, 4); // İlk 4 blog'u al
           } else {
             featuredBlogs = featuredBlogs.slice(0, 4); // İlk 4 featured blog'u al
           }
@@ -64,24 +56,24 @@ const BlogSection = () => {
       <article className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200 group hover:shadow-xl transition-shadow duration-300">
         <div className="flex flex-col lg:flex-row">
           {/* Blog Görseli - YATAY */}
-          <div className="relative lg:w-1/2">
+          <div className="relative lg:w-1/2 h-[250px] lg:h-[300px] overflow-hidden">
             {blog.imageUrl && (blog.imageUrl.startsWith('http') || blog.imageUrl.startsWith('/') || blog.imageUrl.startsWith('data:')) ? (
               <Image
                 src={blog.imageUrl}
                 alt={blog.title}
                 width={600}
-                height={400}
-                className="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-500"
+                height={300}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
-              <div className="w-full h-[300px] bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
                 <div className="text-white text-6xl">📰</div>
               </div>
             )}
           </div>
           
           {/* İçerik */}
-          <div className="lg:w-1/2 p-8 lg:p-10 flex flex-col justify-center max-w-full">
+          <div className="lg:w-1/2 p-8 lg:p-10 flex flex-col justify-center overflow-hidden max-w-full">
             {/* Kategori ve Tarih */}
             <div className="flex items-center gap-4 mb-6">
               <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
@@ -95,8 +87,8 @@ const BlogSection = () => {
                 </svg>
                 <span className="text-sm font-medium">
                   {new Date(blog.publishedAt).toLocaleDateString('en-US', {
-                    day: '2-digit',
-                    month: '2-digit',
+                    day: 'numeric',
+                    month: 'short',
                     year: 'numeric'
                   })}
                 </span>
@@ -110,7 +102,13 @@ const BlogSection = () => {
             }}>
               {blog.title}
             </h3>
-            <p className="text-gray-500 text-sm lg:text-base mb-6 font-light leading-relaxed min-h-[5rem]">
+            <p className="text-gray-500 text-sm lg:text-base leading-relaxed mb-6 font-light overflow-hidden text-ellipsis" style={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              maxHeight: '3.2rem',
+              lineHeight: '1.6rem'
+            }}>
               {blog.excerpt}
             </p>
             
@@ -134,8 +132,8 @@ const BlogSection = () => {
   // Küçük blog kartı render fonksiyonu
   const renderSmallBlogCard = (blog: any, index: number) => {
     return (
-      <article className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden border border-gray-200 cursor-pointer">
-        <Link href={`/news/${blog.id}`} className="block">
+      <Link href={`/news/${blog.id}`}>
+        <article className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group overflow-hidden border border-gray-200 cursor-pointer">
           {/* Blog Görseli - ÜSTTE */}
           <div className="relative h-[200px] overflow-hidden">
             {blog.imageUrl && (blog.imageUrl.startsWith('http') || blog.imageUrl.startsWith('/') || blog.imageUrl.startsWith('data:')) ? (
@@ -172,15 +170,15 @@ const BlogSection = () => {
               }}>
                 {blog.title}
               </h4>
-              <div className="text-sm text-gray-500 leading-relaxed mb-3 font-light overflow-hidden" style={{
+              <p className="text-sm text-gray-500 leading-relaxed mb-3 overflow-hidden font-light text-ellipsis" style={{
                 display: '-webkit-box',
-                WebkitLineClamp: 3,
+                WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
-                lineHeight: '1.3',
-                maxHeight: '3.9em'
+                maxHeight: '2.4rem',
+                lineHeight: '1.2rem'
               }}>
                 {blog.excerpt}
-              </div>
+              </p>
             </div>
             
             <div className="flex items-center justify-between mt-auto">
@@ -190,8 +188,8 @@ const BlogSection = () => {
                 </svg>
                 <span className="text-xs font-medium">
                   {new Date(blog.publishedAt).toLocaleDateString('en-US', {
-                    day: '2-digit',
-                    month: '2-digit',
+                    day: 'numeric',
+                    month: 'short',
                     year: 'numeric'
                   })}
                 </span>
@@ -204,8 +202,8 @@ const BlogSection = () => {
               </div>
             </div>
           </div>
-        </Link>
-      </article>
+        </article>
+      </Link>
     );
   };
 
@@ -215,13 +213,13 @@ const BlogSection = () => {
         {/* Başlık */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center px-4 py-2 bg-orange-100 text-orange-600 rounded-full text-sm font-semibold mb-4">
-            📝 Blog & News
+            📝 Blog & Haberler
           </div>
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            <span className="text-blue-600">Erasmus</span> World News
+            <span className="text-blue-600">Erasmus</span> Dünyasından Haberler
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Latest information about Erasmus programs, educational opportunities and international projects
+            Erasmus programları, eğitim fırsatları ve uluslararası projeler hakkında güncel bilgiler
           </p>
         </div>
 
@@ -231,7 +229,7 @@ const BlogSection = () => {
             <div className="flex items-center justify-center h-[600px]">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Loading news...</p>
+                <p className="mt-4 text-gray-600">Haberler yükleniyor...</p>
               </div>
             </div>
           ) : blogs.length > 0 ? (
@@ -254,7 +252,7 @@ const BlogSection = () => {
             <div className="flex items-center justify-center h-[600px]">
               <div className="text-center">
                 <div className="text-6xl mb-4">📰</div>
-                <p className="text-gray-600">No news available yet</p>
+                <p className="text-gray-600">Henüz haber bulunmuyor</p>
               </div>
             </div>
           )}
@@ -267,7 +265,7 @@ const BlogSection = () => {
             href="/news"
             className="inline-flex items-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
-            View All News
+            Tüm Haberleri Görüntüle
             <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
             </svg>
