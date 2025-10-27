@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using EduExcellence.Application.Interfaces;
 using EduExcellence.Domain.Entities;
 using EduExcellence.Domain.Interfaces;
+using System.ComponentModel.DataAnnotations;
+using System.Text.RegularExpressions;
 
 namespace EduExcellence.WebApi.Controllers
 {
@@ -57,25 +59,85 @@ namespace EduExcellence.WebApi.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return BadRequest(new { message = "Invalid request data", errors = ModelState });
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    
+                    return BadRequest(new { 
+                        message = "Doğrulama hatası", 
+                        errors = errors 
+                    });
                 }
 
-                // Validate required fields
-                if (string.IsNullOrWhiteSpace(request.Name) || 
-                    string.IsNullOrWhiteSpace(request.Email) || 
-                    string.IsNullOrWhiteSpace(request.Subject) || 
-                    string.IsNullOrWhiteSpace(request.Message))
+                // Additional server-side validation
+                if (string.IsNullOrWhiteSpace(request.Name))
                 {
-                    return BadRequest(new { message = "Name, email, subject, and message are required" });
+                    return BadRequest(new { message = "Ad Soyad zorunludur" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Email))
+                {
+                    return BadRequest(new { message = "E-posta adresi zorunludur" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Subject))
+                {
+                    return BadRequest(new { message = "Konu zorunludur" });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Message))
+                {
+                    return BadRequest(new { message = "Mesaj zorunludur" });
+                }
+
+                // Validate name format (only letters and spaces, Turkish characters allowed)
+                if (!Regex.IsMatch(request.Name.Trim(), @"^[a-zA-ZğüşöçİĞÜŞÖÇ\s]+$"))
+                {
+                    return BadRequest(new { message = "Ad Soyad sadece harf içermelidir" });
+                }
+
+                // Validate name length
+                if (request.Name.Trim().Length < 3 || request.Name.Trim().Length > 100)
+                {
+                    return BadRequest(new { message = "Ad Soyad 3 ile 100 karakter arasında olmalıdır" });
+                }
+
+                // Validate email format
+                if (!Regex.IsMatch(request.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                {
+                    return BadRequest(new { message = "Geçerli bir e-posta adresi giriniz" });
+                }
+
+                // Validate phone format if provided
+                if (!string.IsNullOrWhiteSpace(request.Phone))
+                {
+                    var cleanPhone = Regex.Replace(request.Phone, @"[\s\-\(\)]", "");
+                    if (!Regex.IsMatch(cleanPhone, @"^(\+90|0)?5\d{9}$"))
+                    {
+                        return BadRequest(new { message = "Geçerli bir Türk telefon numarası giriniz (örn: +90 555 555 55 55)" });
+                    }
+                }
+
+                // Validate subject length
+                if (request.Subject.Trim().Length < 5 || request.Subject.Trim().Length > 200)
+                {
+                    return BadRequest(new { message = "Konu 5 ile 200 karakter arasında olmalıdır" });
+                }
+
+                // Validate message length
+                if (request.Message.Trim().Length < 10 || request.Message.Trim().Length > 2000)
+                {
+                    return BadRequest(new { message = "Mesaj 10 ile 2000 karakter arasında olmalıdır" });
                 }
 
                 // Send email using the email service
                 await _emailService.SendContactNotificationAsync(
-                    request.Name,
-                    request.Email,
-                    request.Phone ?? string.Empty,
-                    request.Subject,
-                    request.Message
+                    request.Name.Trim(),
+                    request.Email.Trim(),
+                    request.Phone?.Trim() ?? string.Empty,
+                    request.Subject.Trim(),
+                    request.Message.Trim()
                 );
 
                 return Ok(new { message = "Email sent successfully" });
@@ -247,10 +309,26 @@ namespace EduExcellence.WebApi.Controllers
     // DTO for contact email request
     public class ContactEmailRequest
     {
+        [Required(ErrorMessage = "Ad Soyad zorunludur")]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Ad Soyad 3 ile 100 karakter arasında olmalıdır")]
+        [RegularExpression(@"^[a-zA-ZğüşöçİĞÜŞÖÇ\s]+$", ErrorMessage = "Ad Soyad sadece harf içermelidir")]
         public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "E-posta adresi zorunludur")]
+        [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi giriniz")]
+        [StringLength(100, ErrorMessage = "E-posta adresi en fazla 100 karakter olabilir")]
         public string Email { get; set; } = string.Empty;
+
+        [RegularExpression(@"^(\+90|0)?\s*\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}$", ErrorMessage = "Geçerli bir Türk telefon numarası giriniz (örn: +90 555 555 55 55 veya 0555 555 55 55)")]
+        [StringLength(20, ErrorMessage = "Telefon numarası en fazla 20 karakter olabilir")]
         public string? Phone { get; set; }
+
+        [Required(ErrorMessage = "Konu zorunludur")]
+        [StringLength(200, MinimumLength = 5, ErrorMessage = "Konu 5 ile 200 karakter arasında olmalıdır")]
         public string Subject { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Mesaj zorunludur")]
+        [StringLength(2000, MinimumLength = 10, ErrorMessage = "Mesaj 10 ile 2000 karakter arasında olmalıdır")]
         public string Message { get; set; } = string.Empty;
     }
 }

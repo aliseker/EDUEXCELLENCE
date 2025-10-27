@@ -4,7 +4,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import HeroAnimation from './HeroAnimation';
 import { useEffect, useState } from 'react';
-import apiService from '@/services/api';
 
 interface HeroData {
   id: number;
@@ -26,7 +25,19 @@ const Hero = () => {
   useEffect(() => {
     const fetchHeroData = async () => {
       try {
-        const data = await apiService.getActiveHero();
+        // Anasayfa için direkt fetch kullan - token gerektirmeyen public endpoint
+        const response = await fetch('https://localhost:7166/api/Hero/active', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
         setHeroData(data);
       } catch (error) {
         console.error('Error fetching hero data:', error);

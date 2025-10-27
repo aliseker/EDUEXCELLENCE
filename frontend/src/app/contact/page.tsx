@@ -52,6 +52,13 @@ const ContactPage = () => {
     subject: '',
     message: ''
   });
+  const [formErrors, setFormErrors] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    subject: '',
+    message: ''
+  });
   const [formLoading, setFormLoading] = useState(false);
   const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
@@ -108,22 +115,149 @@ const ContactPage = () => {
     loadData();
   }, []);
 
-  // Handle form input changes
+  // Validation functions
+  const validateName = (name: string): string => {
+    if (!name.trim()) {
+      return 'Ad Soyad zorunludur';
+    }
+    if (name.trim().length < 3) {
+      return 'Ad Soyad en az 3 karakter olmalıdır';
+    }
+    if (name.trim().length > 100) {
+      return 'Ad Soyad en fazla 100 karakter olabilir';
+    }
+    if (!/^[a-zA-ZğüşöçİĞÜŞÖÇıİ\s]+$/.test(name.trim())) {
+      return 'Ad Soyad sadece harf içermelidir';
+    }
+    return '';
+  };
+
+  const validateEmail = (email: string): string => {
+    if (!email.trim()) {
+      return 'E-posta adresi zorunludur';
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return 'Geçerli bir e-posta adresi giriniz';
+    }
+    if (email.trim().length > 100) {
+      return 'E-posta adresi en fazla 100 karakter olabilir';
+    }
+    return '';
+  };
+
+  const validatePhone = (phone: string): string => {
+    if (!phone.trim()) {
+      return ''; // Phone is optional
+    }
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    if (!/^(\+90|0)?5\d{9}$/.test(cleanPhone)) {
+      return 'Geçerli bir Türk telefon numarası giriniz (örn: +90 555 555 55 55)';
+    }
+    return '';
+  };
+
+  const validateSubject = (subject: string): string => {
+    if (!subject.trim()) {
+      return 'Konu zorunludur';
+    }
+    if (subject.trim().length < 5) {
+      return 'Konu en az 5 karakter olmalıdır';
+    }
+    if (subject.trim().length > 200) {
+      return 'Konu en fazla 200 karakter olabilir';
+    }
+    return '';
+  };
+
+  const validateMessage = (message: string): string => {
+    if (!message.trim()) {
+      return 'Mesaj zorunludur';
+    }
+    if (message.trim().length < 10) {
+      return 'Mesaj en az 10 karakter olmalıdır';
+    }
+    if (message.trim().length > 2000) {
+      return 'Mesaj en fazla 2000 karakter olabilir';
+    }
+    return '';
+  };
+
+  const validateField = (fieldName: string, value: string): string => {
+    switch (fieldName) {
+      case 'name':
+        return validateName(value);
+      case 'email':
+        return validateEmail(value);
+      case 'phone':
+        return validatePhone(value);
+      case 'subject':
+        return validateSubject(value);
+      case 'message':
+        return validateMessage(value);
+      default:
+        return '';
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors = {
+      name: validateName(formData.name),
+      email: validateEmail(formData.email),
+      phone: validatePhone(formData.phone),
+      subject: validateSubject(formData.subject),
+      message: validateMessage(formData.message)
+    };
+
+    setFormErrors(errors);
+    return !Object.values(errors).some(error => error !== '');
+  };
+
+  // Handle form input changes with real-time validation
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // Real-time validation (only validate if field has been touched)
+    const error = validateField(name, value);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+
     if (formStatus.type) {
       setFormStatus({ type: null, message: '' });
     }
   };
 
+  // Handle field blur (validate when user leaves the field)
+  const handleFieldBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const error = validateField(name, value);
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormLoading(true);
     setFormStatus({ type: null, message: '' });
+
+    // Validate all fields before submission
+    if (!validateForm()) {
+      setFormStatus({ 
+        type: 'error', 
+        message: 'Lütfen tüm zorunlu alanları doğru şekilde doldurun.' 
+      });
+      return;
+    }
+
+    setFormLoading(true);
 
     try {
       const response = await fetch('https://localhost:7166/api/Contact/send-email', {
@@ -146,10 +280,18 @@ const ContactPage = () => {
           subject: '',
           message: ''
         });
+        setFormErrors({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
       } else {
+        const errorData = await response.json();
         setFormStatus({ 
           type: 'error', 
-          message: 'Mesaj gönderilemedi. Lütfen tekrar deneyin veya doğrudan iletişime geçin.' 
+          message: errorData.message || 'Mesaj gönderilemedi. Lütfen tekrar deneyin.' 
         });
       }
     } catch (error) {
@@ -315,9 +457,22 @@ const ContactPage = () => {
                     required
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    onBlur={handleFieldBlur}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400 ${
+                      formErrors.name 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="Adınız ve soyadınız"
                   />
+                  {formErrors.name && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {formErrors.name}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -331,9 +486,22 @@ const ContactPage = () => {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    onBlur={handleFieldBlur}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400 ${
+                      formErrors.email 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="ornek@email.com"
                   />
+                  {formErrors.email && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {formErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -346,9 +514,22 @@ const ContactPage = () => {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    onBlur={handleFieldBlur}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400 ${
+                      formErrors.phone 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="+90 555 555 55 55"
                   />
+                  {formErrors.phone && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {formErrors.phone}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -362,9 +543,22 @@ const ContactPage = () => {
                     required
                     value={formData.subject}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400"
+                    onBlur={handleFieldBlur}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors text-gray-900 placeholder-gray-400 ${
+                      formErrors.subject 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="Mesajınızın konusu"
                   />
+                  {formErrors.subject && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {formErrors.subject}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -378,9 +572,25 @@ const ContactPage = () => {
                     rows={6}
                     value={formData.message}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none text-gray-900 placeholder-gray-400"
+                    onBlur={handleFieldBlur}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent transition-colors resize-none text-gray-900 placeholder-gray-400 ${
+                      formErrors.message 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="Lütfen mesajınızı detaylı bir şekilde yazın..."
                   />
+                  {formErrors.message && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center">
+                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      {formErrors.message}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.message.length}/2000 karakter
+                  </p>
                 </div>
 
                 <button

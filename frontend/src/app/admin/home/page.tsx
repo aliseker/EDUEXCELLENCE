@@ -690,7 +690,7 @@ export default function AdminHome() {
             case 'ka1course':
               console.log('Deleting course with id:', id);
               
-              const courseResponse = await authenticatedFetchCourse(`https://localhost:7166/api/Courses/${id}`, {
+              const courseResponse = await authenticatedFetch(`https://localhost:7166/api/Courses/${id}`, {
                 method: 'DELETE'
               });
               
@@ -712,7 +712,7 @@ export default function AdminHome() {
             case 'ka2project':
               console.log('Deleting KA2 project with id:', id);
               
-              const ka2Response = await authenticatedFetchKa2(`https://localhost:7166/api/Ka2/${id}`, {
+              const ka2Response = await authenticatedFetch(`https://localhost:7166/api/Ka2/${id}`, {
                 method: 'DELETE'
               });
               

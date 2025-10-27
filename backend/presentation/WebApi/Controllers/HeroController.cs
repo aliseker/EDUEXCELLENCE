@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace WebApi.Controllers
 {
-    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class HeroController : ControllerBase
@@ -18,6 +17,7 @@ namespace WebApi.Controllers
         }
 
         [HttpGet("active")]
+        [AllowAnonymous] // Public endpoint - anasayfa için herkes erişebilir
         public async Task<ActionResult<HeroDto>> GetActiveHero()
         {
             var hero = await _heroService.GetActiveHeroAsync();
