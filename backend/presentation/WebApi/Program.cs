@@ -137,6 +137,16 @@ namespace EduExcellence.WebApi
 
             var app = builder.Build();
 
+            // Auto Migration (Production'da)
+            if (!app.Environment.IsDevelopment())
+            {
+                using (var scope = app.Services.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<EduExcellenceDbContext>();
+                    dbContext.Database.Migrate();
+                }
+            }
+
             // Configure the HTTP request pipeline.
             
             // Rate Limiting kaldırıldı
