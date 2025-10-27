@@ -186,7 +186,7 @@ namespace EduExcellence.WebApi
             });
 
             // HTTPS Redirection - Development'da da çalışsın
-            app.UseHttpsRedirection();
+           // app.UseHttpsRedirection();
 
             // CORS
             app.UseCors("AllowFrontend");
