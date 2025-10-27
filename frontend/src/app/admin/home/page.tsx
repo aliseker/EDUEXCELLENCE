@@ -20,6 +20,7 @@ export default function AdminHome() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [isContactSaving, setIsContactSaving] = useState(false);
   const [formKey, setFormKey] = useState(0); // Form reset için
+  const [adminData, setAdminData] = useState<any>(null); // Admin bilgileri için
   const router = useRouter();
 
   // Helper function to handle date conversion without timezone issues
@@ -125,6 +126,16 @@ export default function AdminHome() {
     const checkAuth = async () => {
       const adminAuth = localStorage.getItem('adminLoggedIn');
       const accessToken = localStorage.getItem('accessToken');
+      const storedAdminData = localStorage.getItem('adminData');
+      
+      // Admin bilgilerini yükle
+      if (storedAdminData) {
+        try {
+          setAdminData(JSON.parse(storedAdminData));
+        } catch (error) {
+          console.error('Failed to parse admin data:', error);
+        }
+      }
       
       if (adminAuth === 'true' && accessToken) {
         try {
@@ -1709,8 +1720,12 @@ export default function AdminHome() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">Admin Kullanıcısı</h3>
-                    <p className="text-sm text-gray-600">admin@edu-excellence.com</p>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {adminData ? `${adminData.firstName} ${adminData.lastName}` : 'Admin Kullanıcısı'}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {adminData?.email || 'admin@edu-excellence.com'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2554,6 +2569,16 @@ export default function AdminHome() {
                           type="date"
                           name="startDate"
                           defaultValue={editingItem?.startDate ? editingItem.startDate.split('T')[0] : ''}
+                          onChange={(e) => {
+                            const startDate = e.target.value;
+                            const endDateInput = e.target.form?.querySelector('input[name="endDate"]') as HTMLInputElement;
+                            if (endDateInput && endDateInput.value && startDate) {
+                              if (new Date(startDate) > new Date(endDateInput.value)) {
+                                toast.error('Başlangıç tarihi, bitiş tarihinden sonra olamaz!');
+                                e.target.value = '';
+                              }
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
                         />
                       </div>
@@ -2563,6 +2588,16 @@ export default function AdminHome() {
                           type="date"
                           name="endDate"
                           defaultValue={editingItem?.endDate ? editingItem.endDate.split('T')[0] : ''}
+                          onChange={(e) => {
+                            const endDate = e.target.value;
+                            const startDateInput = e.target.form?.querySelector('input[name="startDate"]') as HTMLInputElement;
+                            if (startDateInput && startDateInput.value && endDate) {
+                              if (new Date(endDate) < new Date(startDateInput.value)) {
+                                toast.error('Bitiş tarihi, başlangıç tarihinden önce olamaz!');
+                                e.target.value = '';
+                              }
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
                         />
                       </div>

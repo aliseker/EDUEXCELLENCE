@@ -128,7 +128,7 @@ export default function CourseDetailPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Yükleniyor...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -143,10 +143,10 @@ export default function CourseDetailPage() {
             <svg className="w-24 h-24 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Kurs Bulunamadı</h3>
-            <p className="text-gray-500 mb-4">Aradığınız kurs mevcut değil</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Course Not Found</h3>
+            <p className="text-gray-500 mb-4">The course you are looking for is not available</p>
             <Link href="/ka1-courses" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Kurslara Dön
+              Back to Courses
             </Link>
           </div>
         </div>
@@ -243,8 +243,8 @@ export default function CourseDetailPage() {
 
           {/* Contact Section */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-center text-white mb-12">
-            <h3 className="text-2xl font-bold mb-4">Bu Kursla İlgileniyor musunuz?</h3>
-            <p className="text-blue-100 mb-6">Detaylı bilgi almak ve başvuru yapmak için bizimle iletişime geçin</p>
+            <h3 className="text-2xl font-bold mb-4">Interested in this Course?</h3>
+            <p className="text-blue-100 mb-6">Contact us for detailed information and application</p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -253,7 +253,7 @@ export default function CourseDetailPage() {
                   </svg>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm text-blue-200">Telefon</p>
+                  <p className="text-sm text-blue-200">Phone</p>
                   <a 
                     href={`tel:${phoneDetails.replace(/[^\d+]/g, '')}`}
                     className="font-semibold hover:text-blue-300 transition-colors duration-200 cursor-pointer"
@@ -270,7 +270,7 @@ export default function CourseDetailPage() {
                   </svg>
                 </div>
                 <div className="text-left">
-                  <p className="text-sm text-blue-200">E-posta</p>
+                  <p className="text-sm text-blue-200">Email</p>
                   <a 
                     href={`mailto:${emailDetails}`}
                     className="font-semibold hover:text-blue-300 transition-colors duration-200 cursor-pointer"

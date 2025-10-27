@@ -185,7 +185,7 @@ export default function MeetingDetailPage() {
                     <div>
                       <div className="text-xs text-gray-500">Created</div>
                       <div className="font-medium">
-                        {new Date(meeting.createdAt).toLocaleDateString('tr-TR')}
+                        {new Date(meeting.createdAt).toLocaleDateString('en-US')}
                       </div>
                     </div>
                   </div>
@@ -198,7 +198,7 @@ export default function MeetingDetailPage() {
                       <div>
                         <div className="text-xs text-gray-500">Last Updated</div>
                         <div className="font-medium">
-                          {new Date(meeting.updatedAt).toLocaleDateString('tr-TR')}
+                          {new Date(meeting.updatedAt).toLocaleDateString('en-US')}
                         </div>
                       </div>
                     </div>

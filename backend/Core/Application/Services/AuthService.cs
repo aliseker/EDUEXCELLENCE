@@ -16,12 +16,14 @@ namespace EduExcellence.Application.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
+        private readonly IEmailService _emailService;
 
-        public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, ILogger<AuthService> logger)
+        public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, ILogger<AuthService> logger, IEmailService emailService)
         {
             _unitOfWork = unitOfWork;
             _configuration = configuration;
             _logger = logger;
+            _emailService = emailService;
         }
 
         public async Task<LoginResponseDto?> LoginAsync(LoginRequestDto request)
@@ -373,6 +375,131 @@ namespace EduExcellence.Application.Services
                 return false;
 
             return true;
+        }
+
+        public async Task<bool> RequestPasswordResetAsync(string email, string clientIp)
+        {
+            try
+            {
+                _logger.LogInformation("Password reset requested for email: {Email} from IP: {IP}", email, clientIp);
+
+                var admin = await _unitOfWork.Admins.FirstOrDefaultAsync(a => a.Email == email && a.IsActive);
+
+                if (admin != null)
+                {
+                    var resetToken = GenerateSecureToken();
+                    admin.PasswordResetToken = BCrypt.Net.BCrypt.HashPassword(resetToken);
+                    admin.PasswordResetTokenExpiresAt = DateTime.UtcNow.AddMinutes(15);
+                    admin.PasswordResetTokenUsed = false;
+                    admin.UpdatedAt = DateTime.UtcNow;
+
+                    await _unitOfWork.Admins.UpdateAsync(admin);
+                    await _unitOfWork.SaveChangesAsync();
+
+                    var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
+                    var resetUrl = $"{frontendUrl}/admin/reset-password?token={Uri.EscapeDataString(resetToken)}&email={Uri.EscapeDataString(email)}";
+                    
+                    await _emailService.SendPasswordResetEmailAsync(admin.Email, resetUrl, admin.FirstName);
+                    
+                    _logger.LogInformation("Password reset email sent to {Email}", email);
+                }
+                else
+                {
+                    _logger.LogWarning("Password reset requested for non-existent email: {Email}", email);
+                }
+
+                await Task.Delay(500);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error requesting password reset for {Email}", email);
+                await Task.Delay(500);
+                return true;
+            }
+        }
+
+        public async Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request)
+        {
+            try
+            {
+                _logger.LogInformation("Password reset attempt for email: {Email}", request.Email);
+
+                if (!IsValidPassword(request.NewPassword))
+                {
+                    _logger.LogWarning("Invalid password format for email: {Email}", request.Email);
+                    return false;
+                }
+
+                var admin = await _unitOfWork.Admins.FirstOrDefaultAsync(a => a.Email == request.Email && a.IsActive);
+
+                if (admin == null)
+                {
+                    _logger.LogWarning("Password reset attempted for non-existent email: {Email}", request.Email);
+                    await Task.Delay(500);
+                    return false;
+                }
+
+                if (string.IsNullOrEmpty(admin.PasswordResetToken))
+                {
+                    _logger.LogWarning("No reset token found for email: {Email}", request.Email);
+                    await Task.Delay(500);
+                    return false;
+                }
+
+                if (admin.PasswordResetTokenExpiresAt == null || admin.PasswordResetTokenExpiresAt < DateTime.UtcNow)
+                {
+                    _logger.LogWarning("Expired reset token for email: {Email}", request.Email);
+                    await Task.Delay(500);
+                    return false;
+                }
+
+                if (admin.PasswordResetTokenUsed)
+                {
+                    _logger.LogWarning("Reset token already used for email: {Email}", request.Email);
+                    await Task.Delay(500);
+                    return false;
+                }
+
+                if (!BCrypt.Net.BCrypt.Verify(request.Token, admin.PasswordResetToken))
+                {
+                    _logger.LogWarning("Invalid reset token for email: {Email}", request.Email);
+                    await Task.Delay(500);
+                    return false;
+                }
+
+                admin.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+                admin.PasswordResetTokenUsed = true;
+                admin.TokensValidFrom = DateTime.UtcNow;
+                admin.UpdatedAt = DateTime.UtcNow;
+
+                await _unitOfWork.Admins.UpdateAsync(admin);
+                await _unitOfWork.SaveChangesAsync();
+
+                await _emailService.SendPasswordChangedNotificationAsync(admin.Email, admin.FirstName);
+
+                _logger.LogInformation("Password successfully reset for email: {Email}", request.Email);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting password for email: {Email}", request.Email);
+                return false;
+            }
+        }
+
+        private string GenerateSecureToken()
+        {
+            var randomBytes = new byte[32];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            
+            return Convert.ToBase64String(randomBytes)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .Replace("=", "");
         }
     }
 }

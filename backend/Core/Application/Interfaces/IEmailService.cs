@@ -4,6 +4,8 @@ namespace EduExcellence.Application.Interfaces
     {
         Task SendEmailAsync(string to, string subject, string body, bool isHtml = true);
         Task SendContactNotificationAsync(string customerName, string customerEmail, string customerPhone, string subject, string message);
+        Task SendPasswordResetEmailAsync(string email, string resetUrl, string firstName);
+        Task SendPasswordChangedNotificationAsync(string email, string firstName);
     }
 }
 

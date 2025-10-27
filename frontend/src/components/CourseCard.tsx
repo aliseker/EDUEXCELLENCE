@@ -70,17 +70,17 @@ const CourseCard = ({
           <span>📍 {location}</span>
           <span>📅 {
             startDate && endDate 
-              ? `${new Date(startDate).toLocaleDateString('tr-TR', {
+              ? `${new Date(startDate).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit'
-                })} - ${new Date(endDate).toLocaleDateString('tr-TR', {
+                })} - ${new Date(endDate).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit'
                 })}`
               : startDate
-              ? new Date(startDate).toLocaleDateString('tr-TR', {
+              ? new Date(startDate).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit'

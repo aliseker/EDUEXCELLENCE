@@ -126,7 +126,7 @@ export default function KA2ProjectPage() {
     const fetchProjects = async () => {
       try {
         console.log(`Fetching projects for type: ${projectType.toUpperCase()}`);
-        // Tüm projeleri çek ve type'a göre filtrele
+        // Fetch all projects and filter by type
         const response = await fetch('https://localhost:7166/api/Ka2');
         console.log(`Response status: ${response.status}`);
         
@@ -134,13 +134,13 @@ export default function KA2ProjectPage() {
           const apiProjects = await response.json();
           console.log(`Fetched all projects:`, apiProjects);
           
-          // Type'a göre filtrele
+          // Filter by type
           const filteredProjects = apiProjects.filter((project: Ka2Project) => 
             project.type.toUpperCase() === projectType.toUpperCase()
           );
           console.log(`Filtered projects for ${projectType}:`, filteredProjects);
           
-          // Projeleri endDate'e göre sırala (en son biten önce)
+          // Sort projects by endDate (most recent first)
           const sortedProjects = filteredProjects.sort((a: Ka2Project, b: Ka2Project) => {
             const dateA = new Date(a.endDate);
             const dateB = new Date(b.endDate);

@@ -26,6 +26,13 @@ namespace EduExcellence.Domain.Entities
 
         public bool IsSuperAdmin { get; set; } = false;
         public DateTime? LastLoginAt { get; set; }
+
+        // Password Reset Fields
+        [MaxLength(500)]
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiresAt { get; set; }
+        public bool PasswordResetTokenUsed { get; set; } = false;
+        public DateTime? TokensValidFrom { get; set; }
     }
 }
 

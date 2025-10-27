@@ -94,7 +94,7 @@ const BlogSection = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span className="text-sm font-medium">
-                  {new Date(blog.publishedAt).toLocaleDateString('tr-TR', {
+                  {new Date(blog.publishedAt).toLocaleDateString('en-US', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
@@ -189,7 +189,7 @@ const BlogSection = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span className="text-xs font-medium">
-                  {new Date(blog.publishedAt).toLocaleDateString('tr-TR', {
+                  {new Date(blog.publishedAt).toLocaleDateString('en-US', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
@@ -254,7 +254,7 @@ const BlogSection = () => {
             <div className="flex items-center justify-center h-[600px]">
               <div className="text-center">
                 <div className="text-6xl mb-4">📰</div>
-                <p className="text-gray-600">Henüz haber bulunmuyor</p>
+                <p className="text-gray-600">No news available yet</p>
               </div>
             </div>
           )}

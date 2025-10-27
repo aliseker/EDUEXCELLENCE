@@ -248,7 +248,7 @@ const UpcomingCoursesSlider = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div className="bg-white/20 rounded-full px-3 py-1">
                           <div className="text-white font-bold text-xs">
-                            {courseDate.toLocaleDateString('tr-TR', { 
+                            {courseDate.toLocaleDateString('en-US', { 
                               year: 'numeric',
                               month: '2-digit',
                               day: '2-digit'

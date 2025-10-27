@@ -244,7 +244,7 @@ const UpcomingApprovedCourses = () => {
                           {courseDate && (
                             <div className="flex items-center justify-between mb-3">
                               <div className="text-sm font-medium text-orange-800">
-                                {courseDate.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                {courseDate.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                               </div>
                               <div className="text-xs text-orange-600">
                                 {daysUntil !== null && (daysUntil > 0 ? `${daysUntil} days left` : daysUntil === 0 ? 'Starts today' : 'Started')}

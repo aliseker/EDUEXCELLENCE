@@ -118,29 +118,29 @@ const ContactPage = () => {
   // Validation functions
   const validateName = (name: string): string => {
     if (!name.trim()) {
-      return 'Ad Soyad zorunludur';
+      return 'Full name is required';
     }
     if (name.trim().length < 3) {
-      return 'Ad Soyad en az 3 karakter olmalıdır';
+      return 'Name must be at least 3 characters';
     }
     if (name.trim().length > 100) {
-      return 'Ad Soyad en fazla 100 karakter olabilir';
+      return 'Name must be maximum 100 characters';
     }
     if (!/^[a-zA-ZğüşöçİĞÜŞÖÇıİ\s]+$/.test(name.trim())) {
-      return 'Ad Soyad sadece harf içermelidir';
+      return 'Name must contain only letters';
     }
     return '';
   };
 
   const validateEmail = (email: string): string => {
     if (!email.trim()) {
-      return 'E-posta adresi zorunludur';
+      return 'Email address is required';
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return 'Geçerli bir e-posta adresi giriniz';
+      return 'Please enter a valid email address';
     }
     if (email.trim().length > 100) {
-      return 'E-posta adresi en fazla 100 karakter olabilir';
+      return 'Email must be maximum 100 characters';
     }
     return '';
   };
@@ -151,33 +151,33 @@ const ContactPage = () => {
     }
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
     if (!/^(\+90|0)?5\d{9}$/.test(cleanPhone)) {
-      return 'Geçerli bir Türk telefon numarası giriniz (örn: +90 555 555 55 55)';
+      return 'Please enter a valid Turkish phone number (e.g.: +90 555 555 55 55)';
     }
     return '';
   };
 
   const validateSubject = (subject: string): string => {
     if (!subject.trim()) {
-      return 'Konu zorunludur';
+      return 'Subject is required';
     }
     if (subject.trim().length < 5) {
-      return 'Konu en az 5 karakter olmalıdır';
+      return 'Subject must be at least 5 characters';
     }
     if (subject.trim().length > 200) {
-      return 'Konu en fazla 200 karakter olabilir';
+      return 'Subject must be maximum 200 characters';
     }
     return '';
   };
 
   const validateMessage = (message: string): string => {
     if (!message.trim()) {
-      return 'Mesaj zorunludur';
+      return 'Message is required';
     }
     if (message.trim().length < 10) {
-      return 'Mesaj en az 10 karakter olmalıdır';
+      return 'Message must be at least 10 characters';
     }
     if (message.trim().length > 2000) {
-      return 'Mesaj en fazla 2000 karakter olabilir';
+      return 'Message must be maximum 2000 characters';
     }
     return '';
   };
@@ -252,7 +252,7 @@ const ContactPage = () => {
     if (!validateForm()) {
       setFormStatus({ 
         type: 'error', 
-        message: 'Lütfen tüm zorunlu alanları doğru şekilde doldurun.' 
+        message: 'Please fill in all required fields correctly.' 
       });
       return;
     }
@@ -271,7 +271,7 @@ const ContactPage = () => {
       if (response.ok) {
         setFormStatus({ 
           type: 'success', 
-          message: 'Mesajınız başarıyla gönderildi! En kısa sürede size geri dönüş yapacağız.' 
+          message: 'Your message has been sent successfully! We will get back to you as soon as possible.' 
         });
         setFormData({
           name: '',
@@ -291,14 +291,14 @@ const ContactPage = () => {
         const errorData = await response.json();
         setFormStatus({ 
           type: 'error', 
-          message: errorData.message || 'Mesaj gönderilemedi. Lütfen tekrar deneyin.' 
+          message: errorData.message || 'Message could not be sent. Please try again.' 
         });
       }
     } catch (error) {
       console.error('Error sending email:', error);
       setFormStatus({ 
         type: 'error', 
-        message: 'Bir hata oluştu. Lütfen tekrar deneyin veya doğrudan email ya da telefon ile iletişime geçin.' 
+        message: 'An error occurred. Please try again or contact us directly via email or phone.' 
       });
     } finally {
       setFormLoading(false);
@@ -409,11 +409,11 @@ const ContactPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-              Bize Ulaşın
+              Contact Us
             </h1>
             <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-              Erasmus+ eğitim programları hakkındaki sorularınız için bizimle iletişime geçin.
-              Uzman ekibimiz size yardımcı olmaya hazır.
+              Get in touch with us for your questions about Erasmus+ education programs.
+              Our expert team is ready to help you.
             </p>
           </div>
 
@@ -421,7 +421,7 @@ const ContactPage = () => {
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl p-8 lg:p-10 border border-gray-100">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Mesaj Gönderin
+                Send Message
               </h2>
 
               {formStatus.type && (
@@ -448,7 +448,7 @@ const ContactPage = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                    Ad Soyad *
+                    Full Name *
                   </label>
                   <input
                     type="text"
@@ -463,7 +463,7 @@ const ContactPage = () => {
                         ? 'border-red-500 focus:ring-red-500' 
                         : 'border-gray-300 focus:ring-blue-500'
                     }`}
-                    placeholder="Adınız ve soyadınız"
+                    placeholder="Your full name"
                   />
                   {formErrors.name && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -477,7 +477,7 @@ const ContactPage = () => {
 
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    E-posta Adresi *
+                    Email Address *
                   </label>
                   <input
                     type="email"
@@ -492,7 +492,7 @@ const ContactPage = () => {
                         ? 'border-red-500 focus:ring-red-500' 
                         : 'border-gray-300 focus:ring-blue-500'
                     }`}
-                    placeholder="ornek@email.com"
+                    placeholder="example@email.com"
                   />
                   {formErrors.email && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -506,7 +506,7 @@ const ContactPage = () => {
 
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                    Telefon Numarası
+                    Phone Number
                   </label>
                   <input
                     type="tel"
@@ -534,7 +534,7 @@ const ContactPage = () => {
 
                 <div>
                   <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
-                    Konu *
+                    Subject *
                   </label>
                   <input
                     type="text"
@@ -549,7 +549,7 @@ const ContactPage = () => {
                         ? 'border-red-500 focus:ring-red-500' 
                         : 'border-gray-300 focus:ring-blue-500'
                     }`}
-                    placeholder="Mesajınızın konusu"
+                    placeholder="Subject of your message"
                   />
                   {formErrors.subject && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -563,7 +563,7 @@ const ContactPage = () => {
 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
-                    Mesajınız *
+                    Your Message *
                   </label>
                   <textarea
                     id="message"
@@ -578,7 +578,7 @@ const ContactPage = () => {
                         ? 'border-red-500 focus:ring-red-500' 
                         : 'border-gray-300 focus:ring-blue-500'
                     }`}
-                    placeholder="Lütfen mesajınızı detaylı bir şekilde yazın..."
+                    placeholder="Please write your message in detail..."
                   />
                   {formErrors.message && (
                     <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -589,7 +589,7 @@ const ContactPage = () => {
                     </p>
                   )}
                   <p className="mt-1 text-xs text-gray-500">
-                    {formData.message.length}/2000 karakter
+                    {formData.message.length}/2000 characters
                   </p>
                 </div>
 
@@ -608,10 +608,10 @@ const ContactPage = () => {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      Gönderiliyor...
+                      Sending...
                     </span>
                   ) : (
-                    'Mesajı Gönder'
+                    'Send Message'
                   )}
                 </button>
               </form>
@@ -624,10 +624,10 @@ const ContactPage = () => {
       <div className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-6xl mx-auto">
-            <div className="space-y-12">
+              <div className="space-y-12">
               <div className="text-center">
                 <h2 className="text-4xl font-bold text-gray-900 mb-4">
-                  İletişim Bilgileri
+                  Contact Information
                 </h2>
               </div>
 
@@ -635,7 +635,7 @@ const ContactPage = () => {
                 {loading ? (
                   <div className="col-span-full flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">İletişim bilgileri yükleniyor...</span>
+                    <span className="ml-3 text-gray-600">Loading contact information...</span>
                   </div>
                 ) : (
                   contactInfo.map((info, index) => (
@@ -696,10 +696,10 @@ const ContactPage = () => {
                     </svg>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    Sosyal Medya
+                    Social Media
                   </h3>
                   <p className="text-gray-600">
-                    Güncel haberler ve duyurular için bizi takip edin
+                    Follow us for latest news and announcements
                   </p>
                 </div>
                 {socialMedias.length > 0 ? (
@@ -735,7 +735,7 @@ const ContactPage = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                       </svg>
                     </div>
-                    <p className="text-gray-500">Henüz sosyal medya hesabı eklenmemiş</p>
+                    <p className="text-gray-500">No social media accounts added yet</p>
                   </div>
                 )}
               </div>
@@ -751,19 +751,19 @@ const ContactPage = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <div className="text-3xl font-bold text-blue-600 mb-2">500+</div>
-                <div className="text-gray-600">Başarılı Program</div>
+                <div className="text-gray-600">Successful Programs</div>
               </div>
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <div className="text-3xl font-bold text-purple-600 mb-2">2000+</div>
-                <div className="text-gray-600">Mutlu Öğrenci</div>
+                <div className="text-gray-600">Happy Students</div>
               </div>
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <div className="text-3xl font-bold text-green-600 mb-2">25+</div>
-                <div className="text-gray-600">Ülke</div>
+                <div className="text-gray-600">Countries</div>
               </div>
               <div className="bg-white rounded-2xl p-6 shadow-lg">
                 <div className="text-3xl font-bold text-orange-600 mb-2">98%</div>
-                <div className="text-gray-600">Memnuniyet</div>
+                <div className="text-gray-600">Satisfaction</div>
               </div>
             </div>
           </div>
@@ -776,10 +776,10 @@ const ContactPage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Müşterilerimiz Ne Diyor?
+                What Our Customers Say?
               </h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Başarı hikayeleri ve deneyimler
+                Success stories and experiences
               </p>
             </div>
 
@@ -810,7 +810,7 @@ const ContactPage = () => {
                   
                   <div className="flex items-center justify-end">
                     <div className="text-sm text-gray-500">
-                      {new Date(review.createdAt).toLocaleDateString('tr-TR', {
+                      {new Date(review.createdAt).toLocaleDateString('en-US', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric'
@@ -829,11 +829,11 @@ const ContactPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Konumumuz
+              Our Location
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              EduExcellence Eğitim Merkezi, Antalya&apos;nın merkezinde, 
-              kolay ulaşılabilir bir konumda bulunmaktadır.
+              EduExcellence Education Center is located in the center of Antalya, 
+              in an easily accessible location.
             </p>
           </div>
           
@@ -847,7 +847,7 @@ const ContactPage = () => {
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="EduExcellence Konum - Antalya"
+                title="EduExcellence Location - Antalya"
               ></iframe>
             </div>
           </div>
@@ -859,38 +859,38 @@ const ContactPage = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Sıkça Sorulan Sorular
+              Frequently Asked Questions
             </h2>
             <p className="text-gray-600">
-              Erasmus programları hakkında en çok merak edilen sorular ve cevapları
+              Most frequently asked questions and answers about Erasmus programs
             </p>
           </div>
 
           <div className="space-y-6">
             {[
               {
-                question: "KA1 kurslarına nasıl başvurabilirim?",
-                answer: "KA1 kurslarımıza başvurmak için bizimle iletişime geçebilirsiniz. Kurs kataloğumuzu inceleyerek ilginizi çeken kursu belirleyip telefon (+90 505 274 90 36) veya e-posta (info@edu-excellence.net) ile bizimle iletişime geçebilirsiniz. Başvurularınızı değerlendirip en kısa sürede size dönüş yapıyoruz."
+                question: "How can I apply for KA1 courses?",
+                answer: "To apply for our KA1 courses, you can contact us. You can review our course catalog, select the course you are interested in, and contact us by phone (+90 505 274 90 36) or email (info@edu-excellence.net). We evaluate your applications and get back to you as soon as possible."
               },
               {
-                question: "Hangi şehirlerde kurslar düzenleniyor?",
-                answer: "Kurslarımızı Antalya, İstanbul, Paris, Dortmund, Cologne, Düsseldorf, Pamukkale, Mykonos ve Granada'da düzenliyoruz. Her şehirde farklı uzmanlık alanlarında kurslar sunuyoruz. Kurs detaylarında hangi şehirde düzenlendiği belirtilmiştir."
+                question: "In which cities are the courses held?",
+                answer: "We organize our courses in Antalya, Istanbul, Paris, Dortmund, Cologne, Düsseldorf, Pamukkale, Mykonos and Granada. We offer courses in different areas of expertise in each city. The course details indicate in which city it is held."
               },
               {
-                question: "KA2 projelerinde ortaklık nasıl kurulur?",
-                answer: "KA2 projelerimizde ortaklık kurmak için bizimle iletişime geçebilirsiniz. Proje yazım aşamasından rapor hazırlama sürecine kadar tüm aşamalarda size destek sağlıyoruz. ESSENTIAL KA210-VET ve Sustainable Tourism projelerimizde aktif olarak ortak arıyoruz."
+                question: "How to establish partnership in KA2 projects?",
+                answer: "To establish a partnership in our KA2 projects, you can contact us. We support you in all stages from project writing to reporting. We are actively looking for partners in our ESSENTIAL KA210-VET and Sustainable Tourism projects."
               },
               {
-                question: "Kurs ücretleri ve ödeme koşulları nelerdir?",
-                answer: "Her kursun ücreti kurs kataloğunda belirtilmiştir. Kurs ücretleri günlük bazda hesaplanır ve kurs türüne, süresine ve lokasyona göre değişiklik gösterebilir. Ödeme koşulları hakkında detaylı bilgi için bizimle iletişime geçebilirsiniz."
+                question: "What are the course fees and payment terms?",
+                answer: "The fee for each course is stated in the course catalog. Course fees are calculated on a daily basis and may vary depending on the course type, duration and location. For detailed information about payment terms, you can contact us."
               },
               {
-                question: "Staj ve job shadowing hizmetleri nelerdir?",
-                answer: "Staj düzenleme ve job shadowing hizmetlerimizle öğrencilerin ve profesyonellerin uluslararası deneyim kazanmalarını sağlıyoruz. Farklı sektörlerde partner kurumlarımızla işbirliği yaparak en uygun staj imkanlarını sunuyoruz."
+                question: "What are internship and job shadowing services?",
+                answer: "With our internship organization and job shadowing services, we enable students and professionals to gain international experience. We offer the most suitable internship opportunities by cooperating with our partner institutions in different sectors."
               },
               {
-                question: "Kurslarda hangi diller kullanılıyor?",
-                answer: "Kurslarımız genellikle İngilizce olarak düzenlenir. CLIL (Content and Language Integrated Learning) kurslarımızda hem içerik hem de dil öğrenimi bir arada gerçekleşir. Türkçe destek de sağlanabilir."
+                question: "What languages are used in the courses?",
+                answer: "Our courses are generally held in English. In our CLIL (Content and Language Integrated Learning) courses, both content and language learning take place together. Turkish support can also be provided."
               }
             ].map((faq, index) => (
               <div key={index} className="bg-white rounded-xl shadow-lg p-6">

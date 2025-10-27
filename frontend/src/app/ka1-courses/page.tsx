@@ -379,7 +379,7 @@ const KA1CoursesPage = () => {
                             {courseDate && (
                               <div className="flex items-center justify-between mb-3">
                                 <div className="text-sm font-medium text-orange-800">
-                                  {courseDate.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                  {courseDate.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                 </div>
                                 <div className="text-xs text-orange-600">
                                   {daysUntil !== null && (daysUntil > 0 ? `${daysUntil} days left` : daysUntil === 0 ? 'Starts today' : 'Started')}
@@ -556,17 +556,17 @@ const KA1CoursesPage = () => {
                       <span>📍 {course.location}</span>
                       <span>📅 {
                         course.startDate && course.endDate 
-                          ? `${new Date(course.startDate).toLocaleDateString('tr-TR', {
+                          ? `${new Date(course.startDate).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: '2-digit',
                               day: '2-digit'
-                            })} - ${new Date(course.endDate).toLocaleDateString('tr-TR', {
+                            })} - ${new Date(course.endDate).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: '2-digit',
                               day: '2-digit'
                             })}`
                           : course.startDate
-                          ? new Date(course.startDate).toLocaleDateString('tr-TR', {
+                          ? new Date(course.startDate).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: '2-digit',
                               day: '2-digit'
@@ -595,12 +595,14 @@ const KA1CoursesPage = () => {
                         </svg>
                         Participants: {course.currentParticipants}/{course.maxParticipants}
                       </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <svg className="w-4 h-4 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                        </svg>
-                        {course.learningOutcomes.length} Learning Outcomes
-                      </div>
+                      {course.learningOutcomes && course.learningOutcomes.length > 0 && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <svg className="w-4 h-4 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          {course.learningOutcomes.length} Learning Outcomes
+                        </div>
+                      )}
                     </div>
 
                     {/* Status Badge */}

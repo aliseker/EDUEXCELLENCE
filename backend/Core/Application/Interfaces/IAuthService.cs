@@ -10,6 +10,8 @@ namespace EduExcellence.Application.Interfaces
         Task<AdminDto?> GetAdminFromTokenAsync(string token);
         Task LogoutAsync(string token);
         Task<bool> ChangePasswordAsync(string token, ChangePasswordRequestDto request);
+        Task<bool> RequestPasswordResetAsync(string email, string clientIp);
+        Task<bool> ResetPasswordAsync(ResetPasswordRequestDto request);
     }
 }
 

@@ -212,6 +212,81 @@ namespace EduExcellence.WebApi.Controllers
             }
         }
 
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
+        {
+            try
+            {
+                var clientIp = GetClientIpAddress();
+                _logger.LogInformation("Forgot password request from IP: {IP}", clientIp);
+
+                // Rate limiting by IP: 3 attempts per hour
+                if (!_rateLimitService.IsAllowed($"forgot_password_ip_{clientIp}", maxAttempts: 3, window: TimeSpan.FromHours(1)))
+                {
+                    _logger.LogWarning("Forgot password rate limit exceeded for IP: {IP}", clientIp);
+                    return Ok(new { message = "Eğer bu email kayıtlıysa, şifre sıfırlama talimatları email adresinize gönderildi." });
+                }
+
+                // Rate limiting by email: 3 attempts per day
+                if (!_rateLimitService.IsAllowed($"forgot_password_email_{request.Email}", maxAttempts: 3, window: TimeSpan.FromDays(1)))
+                {
+                    _logger.LogWarning("Forgot password rate limit exceeded for email: {Email}", request.Email);
+                    return Ok(new { message = "Eğer bu email kayıtlıysa, şifre sıfırlama talimatları email adresinize gönderildi." });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                await _authService.RequestPasswordResetAsync(request.Email, clientIp);
+
+                return Ok(new { message = "Eğer bu email kayıtlıysa, şifre sıfırlama talimatları email adresinize gönderildi." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in forgot password for email {Email}", request.Email);
+                return Ok(new { message = "Eğer bu email kayıtlıysa, şifre sıfırlama talimatları email adresinize gönderildi." });
+            }
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequestDto request)
+        {
+            try
+            {
+                var clientIp = GetClientIpAddress();
+                _logger.LogInformation("Password reset attempt from IP: {IP} for email: {Email}", clientIp, request.Email);
+
+                // Rate limiting by IP: 5 attempts per hour
+                if (!_rateLimitService.IsAllowed($"reset_password_ip_{clientIp}", maxAttempts: 5, window: TimeSpan.FromHours(1)))
+                {
+                    _logger.LogWarning("Reset password rate limit exceeded for IP: {IP}", clientIp);
+                    return StatusCode(429, new { message = "Çok fazla deneme yaptınız. Lütfen 1 saat sonra tekrar deneyin." });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var result = await _authService.ResetPasswordAsync(request);
+
+                if (!result)
+                {
+                    return BadRequest(new { message = "Şifre sıfırlama başarısız. Link geçersiz, süresi dolmuş veya zaten kullanılmış olabilir." });
+                }
+
+                _logger.LogInformation("Password reset successful for email: {Email}", request.Email);
+                return Ok(new { message = "Şifreniz başarıyla değiştirildi. Yeni şifrenizle giriş yapabilirsiniz." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting password for email {Email}", request.Email);
+                return StatusCode(500, new { message = "Şifre sıfırlama sırasında bir hata oluştu." });
+            }
+        }
+
     }
 }
 

@@ -129,11 +129,11 @@ const Ka2Projects = () => {
                   
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-500">
-                      📅 {new Date(project.startDate).toLocaleDateString('tr-TR', {
+                      📅 {new Date(project.startDate).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit'
-                      })} - {new Date(project.endDate).toLocaleDateString('tr-TR', {
+                      })} - {new Date(project.endDate).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: '2-digit',
                         day: '2-digit'

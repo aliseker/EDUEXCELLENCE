@@ -95,7 +95,7 @@ export default function ReviewsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR', {
+    return date.toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -110,7 +110,7 @@ export default function ReviewsPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Yorumlar yükleniyor...</p>
+              <p className="mt-4 text-gray-600">Loading reviews...</p>
             </div>
           </div>
         </div>
@@ -128,10 +128,10 @@ export default function ReviewsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center">
             <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-              Müşteri <span className="text-orange-400">Yorumları</span>
+              Customer <span className="text-orange-400">Reviews</span>
             </h1>
             <p className="text-lg text-purple-100 max-w-2xl mx-auto">
-              Başarı hikayeleri ve deneyimler - EduExcellence ile kariyerinizi bir üst seviyeye taşıyın
+              Success stories and experiences - Take your career to the next level with EduExcellence
             </p>
           </div>
         </div>
@@ -143,19 +143,19 @@ export default function ReviewsPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
               <div className="text-3xl font-bold text-blue-600 mb-2">500+</div>
-              <div className="text-gray-600">Başarılı Program</div>
+              <div className="text-gray-600">Successful Programs</div>
             </div>
             <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
               <div className="text-3xl font-bold text-purple-600 mb-2">2000+</div>
-              <div className="text-gray-600">Mutlu Öğrenci</div>
+              <div className="text-gray-600">Happy Students</div>
             </div>
             <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
               <div className="text-3xl font-bold text-green-600 mb-2">25+</div>
-              <div className="text-gray-600">Ülke</div>
+              <div className="text-gray-600">Countries</div>
             </div>
             <div className="bg-white rounded-xl p-6 text-center shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
               <div className="text-3xl font-bold text-orange-600 mb-2">98%</div>
-              <div className="text-gray-600">Memnuniyet</div>
+              <div className="text-gray-600">Satisfaction</div>
             </div>
           </div>
         </div>
@@ -169,7 +169,7 @@ export default function ReviewsPage() {
               🎥 Video <span className="text-purple-600">Testimonials</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Müşterilerimizin deneyimlerini video formatında izleyin
+              Watch our customers' experiences in video format
             </p>
           </div>
 
@@ -203,8 +203,8 @@ export default function ReviewsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Henüz video yorumu yok</h3>
-              <p className="text-gray-500">Admin panelinden video yorumları ekleyebilirsiniz.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No video testimonials yet</h3>
+              <p className="text-gray-500">You can add video testimonials from the admin panel.</p>
             </div>
           )}
         </div>
@@ -215,18 +215,18 @@ export default function ReviewsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              📝 Müşteri <span className="text-purple-600">Yorumları</span>
+              📝 Customer <span className="text-purple-600">Reviews</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Başarı hikayeleri ve deneyimler
+              Success stories and experiences
             </p>
           </div>
 
           {approvedReviews.length === 0 ? (
             <div className="text-center py-20">
               <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-2xl font-semibold text-gray-900 mb-2">Henüz yorum yok</h3>
-              <p className="text-gray-600">İlk yorumu siz yapın!</p>
+              <h3 className="text-2xl font-semibold text-gray-900 mb-2">No reviews yet</h3>
+              <p className="text-gray-600">Be the first to review!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

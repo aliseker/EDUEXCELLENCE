@@ -189,6 +189,117 @@ namespace EduExcellence.Application.Services
 
             await SendEmailAsync(adminEmail, $"İletişim Formu: {subject}", emailBody, true);
         }
+
+        public async Task SendPasswordResetEmailAsync(string email, string resetUrl, string firstName)
+        {
+            var subject = "Şifre Sıfırlama Talebi - EDU Excellence";
+            
+            var emailBody = $@"
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; }}
+                        .container {{ max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+                        .header {{ background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; padding: 40px; text-align: center; }}
+                        .header h2 {{ margin: 0; font-size: 28px; }}
+                        .content {{ padding: 40px; }}
+                        .greeting {{ font-size: 18px; color: #374151; margin-bottom: 20px; }}
+                        .message {{ color: #6b7280; line-height: 1.6; margin-bottom: 30px; }}
+                        .button-container {{ text-align: center; margin: 30px 0; }}
+                        .button {{ display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }}
+                        .warning {{ background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 5px; color: #92400e; }}
+                        .footer {{ background-color: #f9fafb; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; }}
+                        .security-note {{ font-size: 12px; color: #9ca3af; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h2>🔐 Şifre Sıfırlama</h2>
+                        </div>
+                        <div class='content'>
+                            <div class='greeting'>Merhaba {firstName},</div>
+                            <div class='message'>
+                                Admin hesabınız için şifre sıfırlama talebinde bulundunuz. Aşağıdaki butona tıklayarak yeni şifrenizi belirleyebilirsiniz.
+                            </div>
+                            <div class='button-container'>
+                                <a href='{resetUrl}' class='button'>Şifremi Sıfırla</a>
+                            </div>
+                            <div class='warning'>
+                                ⚠️ <strong>Önemli:</strong> Bu link sadece <strong>15 dakika</strong> geçerlidir ve sadece <strong>bir kez</strong> kullanılabilir.
+                            </div>
+                            <div class='message'>
+                                Eğer bu talebi siz yapmadıysanız, bu e-postayı görmezden gelebilirsiniz. Hesabınız güvendedir.
+                            </div>
+                            <div class='security-note'>
+                                <strong>Güvenlik İpucu:</strong> Asla şifrenizi kimseyle paylaşmayın. EDU Excellence ekibi asla e-posta ile şifrenizi sormaz.
+                            </div>
+                        </div>
+                        <div class='footer'>
+                            Bu mail EDU Excellence platformundan otomatik gönderilmiştir.<br/>
+                            © 2024 EDU Excellence - Tüm hakları saklıdır.
+                        </div>
+                    </div>
+                </body>
+                </html>
+            ";
+
+            await SendEmailAsync(email, subject, emailBody, true);
+        }
+
+        public async Task SendPasswordChangedNotificationAsync(string email, string firstName)
+        {
+            var subject = "Şifreniz Değiştirildi - EDU Excellence";
+            
+            var emailBody = $@"
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; }}
+                        .container {{ max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
+                        .header {{ background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 40px; text-align: center; }}
+                        .header h2 {{ margin: 0; font-size: 28px; }}
+                        .content {{ padding: 40px; }}
+                        .greeting {{ font-size: 18px; color: #374151; margin-bottom: 20px; }}
+                        .message {{ color: #6b7280; line-height: 1.6; margin-bottom: 20px; }}
+                        .success-box {{ background-color: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 5px; color: #065f46; }}
+                        .warning {{ background-color: #fee2e2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 5px; color: #991b1b; }}
+                        .footer {{ background-color: #f9fafb; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; }}
+                        .timestamp {{ font-size: 12px; color: #9ca3af; margin-top: 20px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <div class='header'>
+                            <h2>✅ Şifre Değişikliği Onayı</h2>
+                        </div>
+                        <div class='content'>
+                            <div class='greeting'>Merhaba {firstName},</div>
+                            <div class='success-box'>
+                                ✓ Admin hesabınızın şifresi başarıyla değiştirildi.
+                            </div>
+                            <div class='message'>
+                                Hesabınızın güvenliği için tüm aktif oturumlar sonlandırıldı. Yeni şifrenizle tekrar giriş yapabilirsiniz.
+                            </div>
+                            <div class='warning'>
+                                ⚠️ <strong>Bu değişikliği siz yapmadıysanız:</strong><br/>
+                                Lütfen derhal sistem yöneticisi ile iletişime geçin. Hesabınızın güvenliği tehlikede olabilir.
+                            </div>
+                            <div class='timestamp'>
+                                Değişiklik Zamanı: {DateTime.UtcNow.ToString("dd.MM.yyyy HH:mm")} UTC
+                            </div>
+                        </div>
+                        <div class='footer'>
+                            Bu mail EDU Excellence platformundan otomatik gönderilmiştir.<br/>
+                            © 2024 EDU Excellence - Tüm hakları saklıdır.
+                        </div>
+                    </div>
+                </body>
+                </html>
+            ";
+
+            await SendEmailAsync(email, subject, emailBody, true);
+        }
     }
 }
 
