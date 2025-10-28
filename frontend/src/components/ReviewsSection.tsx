@@ -34,7 +34,9 @@ const ReviewsSection = () => {
   const fetchReviews = async () => {
     try {
       console.log('Fetching reviews from API...');
-      const response = await fetch(`${API_BASE_URL}/Review/active`);
+      const response = await fetch(`${API_BASE_URL}/Review/active`, {
+        cache: 'no-store'
+      });
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
       

@@ -41,7 +41,9 @@ const Footer = () => {
   // Fetch contacts from API
   const fetchContacts = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/Contact/primary`);
+      const response = await fetch(`${API_BASE_URL}/Contact/primary`, {
+        cache: 'no-store'
+      });
       if (response.ok) {
         const data = await response.json();
         setContacts(data);
@@ -56,7 +58,9 @@ const Footer = () => {
   // Fetch social media from API
   const fetchSocialMedias = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/socialmedia/active`);
+      const response = await fetch(`${API_BASE_URL}/socialmedia/active`, {
+        cache: 'no-store'
+      });
       if (response.ok) {
         const data = await response.json();
         setSocialMedias(data);

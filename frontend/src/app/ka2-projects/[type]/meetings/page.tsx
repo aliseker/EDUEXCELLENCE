@@ -42,7 +42,9 @@ export default function MeetingsPage() {
 
       try {
         console.log('Fetching meetings for project:', projectId);
-        const response = await fetch(`${API_BASE_URL}/Meeting/project/${projectId}`);
+        const response = await fetch(`${API_BASE_URL}/Meeting/project/${projectId}`, {
+          cache: 'no-store'
+        });
         console.log('Response status:', response.status);
         
         if (response.ok) {

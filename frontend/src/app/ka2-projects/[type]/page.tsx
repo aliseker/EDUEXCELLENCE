@@ -128,7 +128,9 @@ export default function KA2ProjectPage() {
       try {
         console.log(`Fetching projects for type: ${projectType.toUpperCase()}`);
         // Fetch all projects and filter by type
-        const response = await fetch(`${API_BASE_URL}/Ka2`);
+        const response = await fetch(`${API_BASE_URL}/Ka2`, {
+          cache: 'no-store'
+        });
         console.log(`Response status: ${response.status}`);
         
         if (response.ok) {

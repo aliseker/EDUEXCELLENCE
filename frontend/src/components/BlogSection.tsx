@@ -25,7 +25,9 @@ const BlogSection = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/Blogs`);
+        const response = await fetch(`${API_BASE_URL}/Blogs`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const data = await response.json();
           // Eğer featured blog yoksa, tüm blog'ları al

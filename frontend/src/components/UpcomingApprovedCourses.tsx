@@ -35,7 +35,9 @@ const UpcomingApprovedCourses = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/courses/approved`);
+        const response = await fetch(`${API_BASE_URL}/courses/approved`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const data = await response.json();
           setCourses(data);

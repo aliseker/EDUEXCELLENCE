@@ -102,7 +102,9 @@ export default function NewsDetailPage() {
     const fetchNewsItem = async () => {
       try {
         const newsId = params.id as string;
-        const response = await fetch(`${API_BASE_URL}/Blogs/${newsId}`);
+        const response = await fetch(`${API_BASE_URL}/Blogs/${newsId}`, {
+          cache: 'no-store'
+        });
         
         if (response.ok) {
           const data = await response.json();

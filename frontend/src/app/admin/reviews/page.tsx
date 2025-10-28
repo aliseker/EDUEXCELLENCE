@@ -84,6 +84,7 @@ export default function ReviewsManagement() {
     try {
       const token = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/Review`, {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

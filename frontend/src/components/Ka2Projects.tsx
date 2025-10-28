@@ -35,7 +35,9 @@ const Ka2Projects = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/Ka2/active`);
+        const response = await fetch(`${API_BASE_URL}/Ka2/active`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const apiProjects = await response.json();
           setProjects(apiProjects);

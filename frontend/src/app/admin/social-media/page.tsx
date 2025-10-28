@@ -91,6 +91,7 @@ export default function SocialMediaManagement() {
     try {
       const token = localStorage.getItem('accessToken');
       const response = await fetch(`${API_BASE_URL}/socialmedia`, {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

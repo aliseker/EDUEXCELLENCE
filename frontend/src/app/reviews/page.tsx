@@ -38,7 +38,9 @@ export default function ReviewsPage() {
   const fetchData = async () => {
     try {
       // Fetch all reviews from API
-      const reviewsResponse = await fetch(`${API_BASE_URL}/Review/active`);
+      const reviewsResponse = await fetch(`${API_BASE_URL}/Review/active`, {
+        cache: 'no-store'
+      });
       if (reviewsResponse.ok) {
         const allData = await reviewsResponse.json();
         

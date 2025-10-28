@@ -33,7 +33,9 @@ const NewsPage = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/Blogs`);
+        const response = await fetch(`${API_BASE_URL}/Blogs`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const apiBlogs = await response.json();
           console.log('API Response:', apiBlogs); // Debug için

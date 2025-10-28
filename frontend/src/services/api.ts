@@ -41,6 +41,10 @@ class ApiService {
       : this.token;
     
     const config: RequestInit = {
+      // GET istekleri için cache'i devre dışı bırak
+      cache: options.method === 'POST' || options.method === 'PUT' || options.method === 'DELETE' 
+        ? undefined 
+        : 'no-store',
       headers: {
         'Content-Type': 'application/json',
         ...(currentToken && { Authorization: `Bearer ${currentToken}` }),

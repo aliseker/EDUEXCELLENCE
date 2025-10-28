@@ -14,7 +14,9 @@ const Navbar = () => {
   useEffect(() => {
     const fetchKa2Categories = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/Ka2`);
+        const response = await fetch(`${API_BASE_URL}/Ka2`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const projects = await response.json();
           // Benzersiz kategorileri çıkar

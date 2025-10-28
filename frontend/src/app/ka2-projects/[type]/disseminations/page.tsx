@@ -42,7 +42,9 @@ export default function DisseminationsPage() {
 
       try {
         console.log('Fetching disseminations for project:', projectId);
-        const response = await fetch(`${API_BASE_URL}/Dissemination/project/${projectId}`);
+        const response = await fetch(`${API_BASE_URL}/Dissemination/project/${projectId}`, {
+          cache: 'no-store'
+        });
         console.log('Response status:', response.status);
         
         if (response.ok) {

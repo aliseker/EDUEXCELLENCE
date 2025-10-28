@@ -29,7 +29,9 @@ export default function MeetingDetailPage() {
   useEffect(() => {
     const fetchMeeting = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/Meeting/${meetingId}`);
+        const response = await fetch(`${API_BASE_URL}/Meeting/${meetingId}`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const data = await response.json();
           setMeeting(data);

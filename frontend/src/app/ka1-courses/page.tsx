@@ -44,7 +44,9 @@ const KA1CoursesPage = () => {
   // Fetch courses from API
   const fetchCourses = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/Courses`);
+      const response = await fetch(`${API_BASE_URL}/Courses`, {
+        cache: 'no-store'
+      });
       if (response.ok) {
         const apiCourses = await response.json();
         

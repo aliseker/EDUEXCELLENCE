@@ -39,6 +39,7 @@ const Hero = () => {
         // Anasayfa için direkt fetch kullan - token gerektirmeyen public endpoint
         const response = await fetch(`${API_BASE_URL}/Hero/active`, {
           method: 'GET',
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
           },

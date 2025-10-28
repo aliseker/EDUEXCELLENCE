@@ -44,7 +44,9 @@ export default function CourseDetailPage() {
     const fetchCourse = async () => {
       try {
         const courseId = params.id as string;
-                const response = await fetch(`${API_BASE_URL}/Courses/${courseId}`);
+                const response = await fetch(`${API_BASE_URL}/Courses/${courseId}`, {
+          cache: 'no-store'
+        });
         
         if (response.ok) {
           const apiCourse = await response.json();
@@ -86,7 +88,9 @@ export default function CourseDetailPage() {
   useEffect(() => {
     const fetchContacts = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/Contact/primary`);
+        const response = await fetch(`${API_BASE_URL}/Contact/primary`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const data = await response.json();
           setContacts(data);
