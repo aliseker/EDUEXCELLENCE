@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '@/config/api';
 
 interface BlogItem {
   id: number;
@@ -24,7 +25,7 @@ const BlogSection = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/Blogs');
+        const response = await fetch(`${API_BASE_URL}/Blogs`);
         if (response.ok) {
           const data = await response.json();
           // Eğer featured blog yoksa, tüm blog'ları al

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { API_BASE_URL } from '@/config/api';
 
 interface Review {
   id: number;
@@ -37,7 +38,7 @@ export default function ReviewsPage() {
   const fetchData = async () => {
     try {
       // Fetch all reviews from API
-      const reviewsResponse = await fetch('https://localhost:7166/api/Review/active');
+      const reviewsResponse = await fetch(`${API_BASE_URL}/Review/active`);
       if (reviewsResponse.ok) {
         const allData = await reviewsResponse.json();
         

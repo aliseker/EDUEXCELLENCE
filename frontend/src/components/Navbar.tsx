@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { API_BASE_URL } from '@/config/api';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,7 +14,7 @@ const Navbar = () => {
   useEffect(() => {
     const fetchKa2Categories = async () => {
       try {
-        const response = await fetch('https://localhost:7166/api/Ka2');
+        const response = await fetch(`${API_BASE_URL}/Ka2`);
         if (response.ok) {
           const projects = await response.json();
           // Benzersiz kategorileri çıkar

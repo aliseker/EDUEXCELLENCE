@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
+import { API_BASE_URL } from '@/config/api';
 
 interface Contact {
   id: number;
@@ -40,7 +41,7 @@ const Footer = () => {
   // Fetch contacts from API
   const fetchContacts = async () => {
     try {
-      const response = await fetch('https://localhost:7166/api/Contact/primary');
+      const response = await fetch(`${API_BASE_URL}/Contact/primary`);
       if (response.ok) {
         const data = await response.json();
         setContacts(data);
@@ -55,7 +56,7 @@ const Footer = () => {
   // Fetch social media from API
   const fetchSocialMedias = async () => {
     try {
-      const response = await fetch('https://localhost:7166/api/socialmedia/active');
+      const response = await fetch(`${API_BASE_URL}/socialmedia/active`);
       if (response.ok) {
         const data = await response.json();
         setSocialMedias(data);

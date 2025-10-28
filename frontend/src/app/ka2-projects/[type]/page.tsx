@@ -141,10 +141,10 @@ export default function KA2ProjectPage() {
           );
           console.log(`Filtered projects for ${projectType}:`, filteredProjects);
           
-          // Sort projects by endDate (most recent first)
+          // Sort projects by updatedAt or createdAt (most recent first)
           const sortedProjects = filteredProjects.sort((a: Ka2Project, b: Ka2Project) => {
-            const dateA = new Date(a.endDate);
-            const dateB = new Date(b.endDate);
+            const dateA = new Date(a.updatedAt || a.createdAt);
+            const dateB = new Date(b.updatedAt || b.createdAt);
             return dateB.getTime() - dateA.getTime(); // En yeni önce
           });
           console.log(`Sorted projects:`, sortedProjects);

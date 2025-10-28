@@ -34,8 +34,6 @@ export default function RootLayout({
     <html lang="tr">
       <head>
         {/* Preconnect to API */}
-        <link rel="preconnect" href="https://localhost:7166" />
-        <link rel="dns-prefetch" href="https://localhost:7166" />
         <link rel="preconnect" href="https://edu-excellence.net" />
         <link rel="dns-prefetch" href="https://edu-excellence.net" />
         
