@@ -1626,10 +1626,10 @@ export default function AdminHome() {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex space-x-8 border-t border-gray-200">
+          <div className="flex space-x-4 sm:space-x-8 border-t border-gray-200 overflow-x-auto scrollbar-hide">
             <button
               onClick={() => setActiveTab('dashboard')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'dashboard'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
@@ -1639,7 +1639,7 @@ export default function AdminHome() {
             </button>
             <button
               onClick={() => setActiveTab('blogs')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'blogs'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
@@ -1649,7 +1649,7 @@ export default function AdminHome() {
             </button>
             <button
               onClick={() => setActiveTab('ka1courses')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'ka1courses'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
@@ -1659,7 +1659,7 @@ export default function AdminHome() {
             </button>
             <button
               onClick={() => setActiveTab('ka2projects')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'ka2projects'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
@@ -1669,7 +1669,7 @@ export default function AdminHome() {
             </button>
             <button
               onClick={() => setActiveTab('hero')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'hero'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'
@@ -1679,19 +1679,19 @@ export default function AdminHome() {
             </button>
             <button
               onClick={() => router.push('/admin/social-media')}
-              className="py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300"
+              className="py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300"
             >
               Sosyal Medya
             </button>
             <button
               onClick={() => router.push('/admin/reviews')}
-              className="py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300"
+              className="py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300"
             >
               Müşteri Yorumları
             </button>
             <button
               onClick={() => setActiveTab('contact')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-2 sm:px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
                 activeTab === 'contact'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-900 hover:text-gray-900 hover:border-gray-300'

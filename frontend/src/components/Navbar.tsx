@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { API_BASE_URL } from '@/config/api';
 
 const Navbar = () => {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [ka2Categories, setKa2Categories] = useState<string[]>([]);
@@ -90,8 +92,7 @@ const Navbar = () => {
   const menuItems = [
     {
       title: 'HOME',
-      href: '/',
-      active: true
+      href: '/'
     },
     {
       title: 'ABOUT US',
@@ -196,7 +197,7 @@ const Navbar = () => {
                   <Link
                     href={item.href}
                     className={`px-2 py-3 text-sm font-semibold transition-all duration-200 relative group whitespace-nowrap ${
-                      item.active 
+                      pathname === item.href
                         ? 'text-orange-500' 
                         : 'text-gray-700 hover:text-blue-600'
                     }`}
@@ -208,7 +209,7 @@ const Navbar = () => {
                       </svg>
                     )}
                     <div className={`absolute bottom-0 left-0 h-0.5 transition-all duration-200 ${
-                      item.active 
+                      pathname === item.href
                         ? 'w-full bg-orange-500' 
                         : 'w-0 bg-blue-600 group-hover:w-full'
                     }`}></div>
