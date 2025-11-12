@@ -23,6 +23,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "EduExcellence - Erasmus Eğitim Programları",
   description: "Uluslararası eğitim fırsatları ile kariyerinizi bir üst seviyeye taşıyın. KA1, KA2 ve KA3 programları ile Avrupa'da eğitim alın.",
+  icons: {
+    icon: '/images/logo.jpg',
+    apple: '/images/logo.jpg',
+    shortcut: '/images/logo.jpg',
+  },
 };
 
 export default function RootLayout({
@@ -33,6 +38,11 @@ export default function RootLayout({
   return (
     <html lang="tr">
       <head>
+        {/* Favicon - Logo kullan */}
+        <link rel="icon" type="image/jpeg" href="/images/logo.jpg" />
+        <link rel="shortcut icon" type="image/jpeg" href="/images/logo.jpg" />
+        <link rel="apple-touch-icon" href="/images/logo.jpg" />
+        
         {/* Preconnect to API */}
         <link rel="preconnect" href="https://edu-excellence.net" />
         <link rel="dns-prefetch" href="https://edu-excellence.net" />

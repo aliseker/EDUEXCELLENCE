@@ -21,11 +21,19 @@ export async function authenticatedFetch(
     throw new Error('No access token available');
   }
 
-  // Add Authorization header
-  const headers = {
-    ...options.headers,
-    'Authorization': `Bearer ${token}`,
-  };
+  // Check if body is FormData
+  const isFormData = options.body instanceof FormData;
+
+  // Prepare headers
+  // For FormData, browser will set Content-Type automatically with boundary
+  // So we should not set it manually
+  const headers = new Headers(options.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+  
+  // Remove Content-Type if FormData (browser will set it with boundary)
+  if (isFormData) {
+    headers.delete('Content-Type');
+  }
 
   // Make the request
   let response = await fetch(url, {
@@ -39,13 +47,19 @@ export async function authenticatedFetch(
       // Refresh access token
       const newToken = await tokenManager.refreshAccessToken();
 
+      // Prepare headers for retry
+      const retryHeaders = new Headers(options.headers);
+      retryHeaders.set('Authorization', `Bearer ${newToken}`);
+      
+      // Remove Content-Type for FormData in retry as well
+      if (isFormData) {
+        retryHeaders.delete('Content-Type');
+      }
+
       // Retry the request with new token
       response = await fetch(url, {
         ...options,
-        headers: {
-          ...options.headers,
-          'Authorization': `Bearer ${newToken}`,
-        },
+        headers: retryHeaders,
       });
     } catch (error) {
       // Refresh failed, logout
@@ -89,6 +103,10 @@ export const authFetch = {
   delete: (url: string, options?: RequestInit) =>
     authenticatedFetch(url, { ...options, method: 'DELETE' }),
 };
+
+
+
+
 
 
 

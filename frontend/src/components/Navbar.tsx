@@ -178,7 +178,7 @@ const Navbar = () => {
                   EduExcellence
                 </div>
                 <div className="text-xs text-gray-500 -mt-1">
-                  Erasmus Education Center
+                  Training, Project, Consultancy
                 </div>
               </div>
             </Link>
@@ -197,7 +197,9 @@ const Navbar = () => {
                   <Link
                     href={item.href}
                     className={`px-2 py-3 text-sm font-semibold transition-all duration-200 relative group whitespace-nowrap ${
-                      pathname === item.href
+                      (item.title === 'HOME' && pathname === '/') || 
+                      (item.title === 'KA2 PROJECTS' && pathname.startsWith('/ka2-projects')) ||
+                      (item.title !== 'HOME' && item.title !== 'KA2 PROJECTS' && pathname === item.href)
                         ? 'text-orange-500' 
                         : 'text-gray-700 hover:text-blue-600'
                     }`}
@@ -209,7 +211,9 @@ const Navbar = () => {
                       </svg>
                     )}
                     <div className={`absolute bottom-0 left-0 h-0.5 transition-all duration-200 ${
-                      pathname === item.href
+                      (item.title === 'HOME' && pathname === '/') || 
+                      (item.title === 'KA2 PROJECTS' && pathname.startsWith('/ka2-projects')) ||
+                      (item.title !== 'HOME' && item.title !== 'KA2 PROJECTS' && pathname === item.href)
                         ? 'w-full bg-orange-500' 
                         : 'w-0 bg-blue-600 group-hover:w-full'
                     }`}></div>

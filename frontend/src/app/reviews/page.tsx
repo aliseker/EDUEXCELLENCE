@@ -131,7 +131,7 @@ export default function ReviewsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center">
             <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-              Customer <span className="text-orange-400">Reviews</span>
+              <span className="text-orange-400">Reviews</span>
             </h1>
             <p className="text-lg text-purple-100 max-w-2xl mx-auto">
               Success stories and experiences - Take your career to the next level with EduExcellence
@@ -177,7 +177,7 @@ export default function ReviewsPage() {
               </h2>
             </div>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Watch our customers' experiences in video format
+              Watch our experiences in video format
             </p>
           </div>
 
@@ -223,7 +223,7 @@ export default function ReviewsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              📝 Customer <span className="text-purple-600">Reviews</span>
+              📝 <span className="text-purple-600">Reviews</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Success stories and experiences

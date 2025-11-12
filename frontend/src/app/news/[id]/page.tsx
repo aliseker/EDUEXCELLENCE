@@ -321,15 +321,22 @@ export default function NewsDetailPage() {
 
       {/* Image Modal */}
       {selectedImageIndex !== null && newsItem && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
-          <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center">
-            {/* Close Button */}
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setSelectedImageIndex(null)}
+        >
+          <div 
+            className="relative max-w-7xl w-full max-h-[90vh] flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button - Sağ Üstte Büyük ve Görünür */}
             <button
               onClick={() => setSelectedImageIndex(null)}
-              className="absolute top-4 right-4 z-[60] bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-3 transition-colors"
+              className="absolute -top-2 -right-2 z-[10000] bg-white hover:bg-red-50 text-gray-900 hover:text-red-600 rounded-full p-3 shadow-xl hover:shadow-2xl transition-all duration-200 border-2 border-gray-200 hover:border-red-300 group"
+              aria-label="Close modal"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg className="w-8 h-8 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
@@ -338,45 +345,62 @@ export default function NewsDetailPage() {
               <>
                 {/* Previous Button */}
                 <button
-                  onClick={() => setSelectedImageIndex(
-                    selectedImageIndex > 0 ? selectedImageIndex - 1 : newsItem.images.length - 1
-                  )}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 z-[60] bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-4 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImageIndex(
+                      selectedImageIndex > 0 ? selectedImageIndex - 1 : newsItem.images.length - 1
+                    );
+                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 z-[10000] bg-white/95 hover:bg-white text-gray-900 rounded-full p-4 shadow-xl hover:shadow-2xl transition-all duration-200 border border-gray-200 hover:border-blue-500 hover:scale-110"
+                  aria-label="Previous image"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
 
                 {/* Next Button */}
                 <button
-                  onClick={() => setSelectedImageIndex(
-                    selectedImageIndex < newsItem.images.length - 1 ? selectedImageIndex + 1 : 0
-                  )}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 z-[60] bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full p-4 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImageIndex(
+                      selectedImageIndex < newsItem.images.length - 1 ? selectedImageIndex + 1 : 0
+                    );
+                  }}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-[10000] bg-white/95 hover:bg-white text-gray-900 rounded-full p-4 shadow-xl hover:shadow-2xl transition-all duration-200 border border-gray-200 hover:border-blue-500 hover:scale-110"
+                  aria-label="Next image"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               </>
             )}
 
             {/* Main Image */}
-            <div className="relative">
+            <div 
+              className="relative w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
               <Image
                 src={newsItem.images[selectedImageIndex]}
                 alt={`${newsItem.title} - Image ${selectedImageIndex + 1}`}
                 width={1200}
                 height={800}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl shadow-2xl bg-white/5"
+                priority
               />
             </div>
 
-            {/* Image Counter */}
+            {/* Image Counter - Modern ve Şık Tasarım */}
             {newsItem.images.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-[60] bg-black bg-opacity-70 text-white px-4 py-2 rounded-full text-sm font-medium">
-                {selectedImageIndex + 1} / {newsItem.images.length}
+              <div 
+                className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[10000] bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full text-base font-semibold shadow-2xl backdrop-blur-sm border border-white/20"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <span className="text-white/90">{selectedImageIndex + 1}</span>
+                <span className="mx-2 text-white/60">/</span>
+                <span className="text-white/70">{newsItem.images.length}</span>
               </div>
             )}
           </div>
