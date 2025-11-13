@@ -226,12 +226,14 @@ export default function MeetingsPage() {
               {currentMeeting.images && currentMeeting.images.length > 0 ? (
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                   {/* Main Photo - Sol Taraf */}
-                  <div className="flex-1">
+                  <div className="flex-1 rounded-xl overflow-hidden h-[500px] bg-gray-50 flex items-center justify-center">
                     {selectedImage && (
                       <img
-                        src={selectedImage.startsWith('http') ? selectedImage : `${BACKEND_BASE_URL}${selectedImage}`}
+                        src={selectedImage.startsWith('data:') || selectedImage.startsWith('http') 
+                          ? selectedImage 
+                          : `${BACKEND_BASE_URL}${selectedImage}`}
                         alt={currentMeeting.title}
-                        className="w-full h-auto max-h-[500px] object-cover rounded-xl shadow-lg"
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-lg"
                       />
                     )}
                   </div>
@@ -270,7 +272,9 @@ export default function MeetingsPage() {
                             }`}
                           >
                             <img
-                              src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
+                              src={image.startsWith('data:') || image.startsWith('http') 
+                                ? image 
+                                : `${BACKEND_BASE_URL}${image}`}
                               alt={`Photo ${index + 1}`}
                               className="w-full h-full object-cover"
                             />

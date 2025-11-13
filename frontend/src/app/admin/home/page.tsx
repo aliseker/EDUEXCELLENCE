@@ -1198,48 +1198,116 @@ export default function AdminHome() {
     const description = formData.get('meetingDescription') as string;
 
     try {
-      // Yeni resimleri upload et
+      // Yeni resimleri base64'e çevir (blog gibi - CORS sorunu olmaması için)
       let uploadedImageUrls: string[] = [];
       
       if (meetingImages.length > 0) {
-        const imageFormData = new FormData();
-        meetingImages.forEach(file => {
-          imageFormData.append('files', file);
-        });
-
-        const uploadResponse = await authenticatedFetch(`${API_BASE_URL}/Upload/multiple`, {
-          method: 'POST',
-          body: imageFormData,
-        });
-
-        if (uploadResponse.ok) {
-          uploadedImageUrls = await uploadResponse.json();
-        } else {
-          const errorText = await uploadResponse.text();
-          console.error('Upload error:', errorText);
-          toast.error('Fotoğraflar yüklenirken hata oluştu!');
+        try {
+          uploadedImageUrls = await Promise.all(
+            meetingImages.map(async (file) => {
+              return new Promise((resolve, reject) => {
+                try {
+                  // Compress image to reduce size
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  const img = new Image();
+                  
+                  img.onload = () => {
+                    try {
+                      // Set canvas size (max 800px width, maintain aspect ratio)
+                      const maxWidth = 800;
+                      const maxHeight = 600;
+                      let { width, height } = img;
+                      
+                      if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                      }
+                      if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                      }
+                      
+                      canvas.width = width;
+                      canvas.height = height;
+                      
+                      // Draw and compress with WebP for better quality
+                      ctx?.drawImage(img, 0, 0, width, height);
+                      
+                      // Try WebP first (better quality, smaller size)
+                      let compressedDataUrl = canvas.toDataURL('image/webp', 0.8); // 80% quality for WebP
+                      
+                      // If WebP is not supported, fallback to JPEG with better quality
+                      if (compressedDataUrl.length === 0 || compressedDataUrl.includes('data:,')) {
+                        compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality for JPEG
+                      }
+                      
+                      // If still too large, compress more
+                      if (compressedDataUrl.length > 100000) { // Increased limit for better quality
+                        if (compressedDataUrl.includes('image/webp')) {
+                          compressedDataUrl = canvas.toDataURL('image/webp', 0.6); // 60% quality
+                        } else {
+                          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5); // 50% quality
+                        }
+                      }
+                      
+                      console.log('Compressed image size:', compressedDataUrl.length);
+                      resolve(compressedDataUrl);
+                    } catch (error) {
+                      console.error('Error compressing image:', error);
+                      reject(error);
+                    }
+                  };
+                  
+                  img.onerror = () => {
+                    console.error('Error loading image');
+                    reject(new Error('Failed to load image'));
+                  };
+                  
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    img.src = e.target?.result as string;
+                  };
+                  reader.onerror = () => {
+                    console.error('Error reading file');
+                    reject(new Error('Failed to read file'));
+                  };
+                  reader.readAsDataURL(file);
+                } catch (error) {
+                  console.error('Error in image processing:', error);
+                  reject(error);
+                }
+              });
+            })
+          );
+        } catch (error) {
+          console.error('Error processing images:', error);
+          console.log('Falling back to simple base64 conversion...');
+          
+          // Fallback: simple base64 conversion without compression
+          try {
+            uploadedImageUrls = await Promise.all(
+              meetingImages.map(async (file) => {
+                return new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = (e) => resolve(e.target?.result as string);
+                  reader.onerror = () => reject(new Error('Failed to read file'));
+                  reader.readAsDataURL(file);
+                });
+              })
+            );
+            console.log('Fallback conversion successful');
+          } catch (fallbackError) {
+            console.error('Fallback conversion also failed:', fallbackError);
+            toast.error('Resim işleme hatası: ' + fallbackError);
+            return; // Stop execution if both methods fail
+          }
         }
       }
 
       // Eski resimlerle yeni resimleri birleştir
-      // Eski resimleri relative URL'ye çevir (eğer absolute URL ise)
       const existingImages = (editingMeeting?.images || [])
-        .filter((img: string) => img && img.trim() !== '') // Boş olanları temizle
-        .map((img: string) => {
-          // Eğer absolute URL ise relative'e çevir
-          const baseUrl = BACKEND_BASE_URL || 'https://localhost:7166';
-          if (img.startsWith(baseUrl)) {
-            return img.replace(baseUrl, '');
-          }
-          if (img.startsWith('https://localhost:7166')) {
-            return img.replace('https://localhost:7166', '');
-          }
-          if (img.startsWith('http://localhost:7166')) {
-            return img.replace('http://localhost:7166', '');
-          }
-          // Zaten relative ise olduğu gibi dön
-          return img;
-        });
+        .filter((img: string) => img && img.trim() !== ''); // Boş olanları temizle
       
       const allImages = [...existingImages, ...uploadedImageUrls];
 
@@ -1430,43 +1498,116 @@ export default function AdminHome() {
     const description = formData.get('disseminationDescription') as string;
 
     try {
+      // Yeni resimleri base64'e çevir (blog gibi - CORS sorunu olmaması için)
       let uploadedImageUrls: string[] = [];
       
       if (disseminationImages.length > 0) {
-        const imageFormData = new FormData();
-        disseminationImages.forEach(file => {
-          imageFormData.append('files', file);
-        });
-
-        const uploadResponse = await authenticatedFetch(`${API_BASE_URL}/Upload/multiple`, {
-          method: 'POST',
-          body: imageFormData,
-        });
-
-        if (uploadResponse.ok) {
-          uploadedImageUrls = await uploadResponse.json();
-        } else {
-          const errorText = await uploadResponse.text();
-          console.error('Upload error:', errorText);
-          toast.error('Fotoğraflar yüklenirken hata oluştu!');
+        try {
+          uploadedImageUrls = await Promise.all(
+            disseminationImages.map(async (file) => {
+              return new Promise((resolve, reject) => {
+                try {
+                  // Compress image to reduce size
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  const img = new Image();
+                  
+                  img.onload = () => {
+                    try {
+                      // Set canvas size (max 800px width, maintain aspect ratio)
+                      const maxWidth = 800;
+                      const maxHeight = 600;
+                      let { width, height } = img;
+                      
+                      if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                      }
+                      if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                      }
+                      
+                      canvas.width = width;
+                      canvas.height = height;
+                      
+                      // Draw and compress with WebP for better quality
+                      ctx?.drawImage(img, 0, 0, width, height);
+                      
+                      // Try WebP first (better quality, smaller size)
+                      let compressedDataUrl = canvas.toDataURL('image/webp', 0.8); // 80% quality for WebP
+                      
+                      // If WebP is not supported, fallback to JPEG with better quality
+                      if (compressedDataUrl.length === 0 || compressedDataUrl.includes('data:,')) {
+                        compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality for JPEG
+                      }
+                      
+                      // If still too large, compress more
+                      if (compressedDataUrl.length > 100000) { // Increased limit for better quality
+                        if (compressedDataUrl.includes('image/webp')) {
+                          compressedDataUrl = canvas.toDataURL('image/webp', 0.6); // 60% quality
+                        } else {
+                          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5); // 50% quality
+                        }
+                      }
+                      
+                      console.log('Compressed image size:', compressedDataUrl.length);
+                      resolve(compressedDataUrl);
+                    } catch (error) {
+                      console.error('Error compressing image:', error);
+                      reject(error);
+                    }
+                  };
+                  
+                  img.onerror = () => {
+                    console.error('Error loading image');
+                    reject(new Error('Failed to load image'));
+                  };
+                  
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    img.src = e.target?.result as string;
+                  };
+                  reader.onerror = () => {
+                    console.error('Error reading file');
+                    reject(new Error('Failed to read file'));
+                  };
+                  reader.readAsDataURL(file);
+                } catch (error) {
+                  console.error('Error in image processing:', error);
+                  reject(error);
+                }
+              });
+            })
+          );
+        } catch (error) {
+          console.error('Error processing images:', error);
+          console.log('Falling back to simple base64 conversion...');
+          
+          // Fallback: simple base64 conversion without compression
+          try {
+            uploadedImageUrls = await Promise.all(
+              disseminationImages.map(async (file) => {
+                return new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = (e) => resolve(e.target?.result as string);
+                  reader.onerror = () => reject(new Error('Failed to read file'));
+                  reader.readAsDataURL(file);
+                });
+              })
+            );
+            console.log('Fallback conversion successful');
+          } catch (fallbackError) {
+            console.error('Fallback conversion also failed:', fallbackError);
+            toast.error('Resim işleme hatası: ' + fallbackError);
+            return; // Stop execution if both methods fail
+          }
         }
       }
 
+      // Eski resimlerle yeni resimleri birleştir
       const existingImages = (editingDissemination?.images || [])
-        .filter((img: string) => img && img.trim() !== '')
-        .map((img: string) => {
-          const baseUrl = BACKEND_BASE_URL || 'https://localhost:7166';
-          if (img.startsWith(baseUrl)) {
-            return img.replace(baseUrl, '');
-          }
-          if (img.startsWith('https://localhost:7166')) {
-            return img.replace('https://localhost:7166', '');
-          }
-          if (img.startsWith('http://localhost:7166')) {
-            return img.replace('http://localhost:7166', '');
-          }
-          return img;
-        });
+        .filter((img: string) => img && img.trim() !== '');
       
       const allImages = [...existingImages, ...uploadedImageUrls];
 
@@ -3388,7 +3529,9 @@ export default function AdminHome() {
                           {meeting.images.slice(0, 6).map((image: string, idx: number) => (
                             <img
                               key={idx}
-                              src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
+                              src={image.startsWith('data:') || image.startsWith('http') 
+                                ? image 
+                                : `${BACKEND_BASE_URL}${image}`}
                               alt={`Meeting ${idx + 1}`}
                               className="w-full h-20 object-cover rounded-lg"
                             />
@@ -3584,7 +3727,9 @@ export default function AdminHome() {
                           {dissemination.images.slice(0, 6).map((image: string, idx: number) => (
                             <img
                               key={idx}
-                              src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
+                              src={image.startsWith('data:') || image.startsWith('http') 
+                                ? image 
+                                : `${BACKEND_BASE_URL}${image}`}
                               alt={`Dissemination ${idx + 1}`}
                               className="w-full h-20 object-cover rounded-lg"
                             />

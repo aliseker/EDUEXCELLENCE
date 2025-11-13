@@ -9,9 +9,45 @@ import { API_BASE_URL } from '@/config/api';
 // Static fallback content for initial render (prevents LCP delay)
 const FALLBACK_HERO = {
   id: 0,
-  title: "Transform Your Future with Erasmus+ Education Programs",
-  description: "Unlock international education opportunities and elevate your career with KA1, KA2, and KA3 programs across Europe.",
-  items: [],
+  title: "Certified Solution Partner in your Erasmus+ Journey...",
+  description: "Ka1 Teacher Training Courses, Ka2 Project Consultancy and Cooperation, Internship and Jobshadowing Arrangements...",
+  items: [
+    {
+      id: 1,
+      text: "Well planned programmes enriched with social and cultural activities",
+      heroId: 0
+    },
+    {
+      id: 2,
+      text: "Fast and easy 7/24 communication and support",
+      heroId: 0
+    },
+    {
+      id: 3,
+      text: "Experienced staff",
+      heroId: 0
+    },
+    {
+      id: 4,
+      text: "Lots of transportation and accommadation options / services",
+      heroId: 0
+    },
+    {
+      id: 5,
+      text: "Internship and Jobshadowing Arrangements with qualified host organisations",
+      heroId: 0
+    },
+    {
+      id: 6,
+      text: "Tailored courses in accordance with the needs of partners",
+      heroId: 0
+    },
+    {
+      id: 7,
+      text: "Ongoing support during preparation, implementation, dissemination and sustainability of your projects",
+      heroId: 0
+    }
+  ],
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 };
@@ -57,9 +93,8 @@ const Hero = () => {
       }
     };
 
-    // Delay API call slightly to prioritize initial render
-    const timer = setTimeout(fetchHeroData, 100);
-    return () => clearTimeout(timer);
+    // Fetch immediately to avoid showing fallback for too long
+    fetchHeroData();
   }, []);
 
   // Parse title to separate main title and highlighted part

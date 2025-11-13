@@ -229,7 +229,9 @@ export default function DisseminationsPage() {
                   <div className="flex-1 rounded-xl overflow-hidden h-[500px] bg-gray-50 flex items-center justify-center">
                     {selectedImage && (
                       <img
-                        src={selectedImage.startsWith('http') ? selectedImage : `${BACKEND_BASE_URL}${selectedImage}`}
+                        src={selectedImage.startsWith('data:') || selectedImage.startsWith('http') 
+                          ? selectedImage 
+                          : `${BACKEND_BASE_URL}${selectedImage}`}
                         alt={currentDissemination.title}
                         className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-lg"
                       />
@@ -270,7 +272,9 @@ export default function DisseminationsPage() {
                             }`}
                           >
                             <img
-                              src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
+                              src={image.startsWith('data:') || image.startsWith('http') 
+                                ? image 
+                                : `${BACKEND_BASE_URL}${image}`}
                               alt={`Photo ${index + 1}`}
                               className="w-full h-full object-cover object-center"
                               style={{ minWidth: '100%', minHeight: '100%' }}

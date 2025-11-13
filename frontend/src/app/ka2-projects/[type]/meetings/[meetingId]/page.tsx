@@ -122,13 +122,21 @@ export default function MeetingDetailPage() {
               {/* Selected Image */}
               {selectedImage && (
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-                  <div className="relative h-[500px]">
-                    <Image
-                      src={selectedImage}
-                      alt={meeting.title}
-                      fill
-                      className="object-cover"
-                    />
+                  <div className="relative h-[500px] bg-gray-50 flex items-center justify-center">
+                    {selectedImage.startsWith('data:') ? (
+                      <img
+                        src={selectedImage}
+                        alt={meeting.title}
+                        className="max-w-full max-h-full w-auto h-auto object-contain"
+                      />
+                    ) : (
+                      <Image
+                        src={selectedImage}
+                        alt={meeting.title}
+                        fill
+                        className="object-cover"
+                      />
+                    )}
                   </div>
                 </div>
               )}
@@ -146,12 +154,20 @@ export default function MeetingDetailPage() {
                           : 'border-transparent hover:border-blue-300'
                       }`}
                     >
-                      <Image
-                        src={image}
-                        alt={`${meeting.title} - ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
+                      {image.startsWith('data:') ? (
+                        <img
+                          src={image}
+                          alt={`${meeting.title} - ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src={image}
+                          alt={`${meeting.title} - ${index + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
