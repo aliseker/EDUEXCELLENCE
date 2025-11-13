@@ -36,7 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr">
+    <html lang="tr" suppressHydrationWarning>
       <head>
         {/* Favicon - Logo kullan */}
         <link rel="icon" type="image/jpeg" href="/images/logo.jpg" />

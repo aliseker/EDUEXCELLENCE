@@ -160,9 +160,9 @@ const NewsPage = () => {
                       <Image
                         src={item.imageUrl}
                         alt={item.title}
-                        width={400}
-                        height={192}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           console.log('Image load error for:', item.title, 'URL:', item.imageUrl);
                           e.currentTarget.style.display = 'none';

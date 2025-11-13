@@ -226,12 +226,12 @@ export default function DisseminationsPage() {
               {currentDissemination.images && currentDissemination.images.length > 0 ? (
                 <div className="flex flex-col md:flex-row md:items-start gap-4">
                   {/* Main Photo - Sol Taraf */}
-                  <div className="flex-1">
+                  <div className="flex-1 rounded-xl overflow-hidden h-[500px] bg-gray-50 flex items-center justify-center">
                     {selectedImage && (
                       <img
                         src={selectedImage.startsWith('http') ? selectedImage : `${BACKEND_BASE_URL}${selectedImage}`}
                         alt={currentDissemination.title}
-                        className="w-full h-auto max-h-[500px] object-cover rounded-xl shadow-lg"
+                        className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-lg"
                       />
                     )}
                   </div>
@@ -259,10 +259,10 @@ export default function DisseminationsPage() {
                               setSelectedImage(image);
                               setIsAutoPlay(false);
                             }}
-                            className={`relative rounded-lg overflow-hidden transition-all ${
+                            className={`relative rounded-lg overflow-hidden transition-all block ${
                               currentDissemination.images.length >= 2 && currentDissemination.images.length <= 4 
-                                ? 'w-full md:h-full' 
-                                : 'aspect-square'
+                                ? 'w-full md:h-[120px] md:w-full' 
+                                : 'h-[120px] w-full'
                             } ${
                               selectedImage === image
                                 ? 'ring-2 ring-green-500 scale-95'
@@ -272,7 +272,8 @@ export default function DisseminationsPage() {
                             <img
                               src={image.startsWith('http') ? image : `${BACKEND_BASE_URL}${image}`}
                               alt={`Photo ${index + 1}`}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover object-center"
+                              style={{ minWidth: '100%', minHeight: '100%' }}
                             />
                           </button>
                         ))}

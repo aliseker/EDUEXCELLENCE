@@ -30,14 +30,16 @@ const BlogSection = () => {
         });
         if (response.ok) {
           const data = await response.json();
-          // Eğer featured blog yoksa, tüm blog'ları al
-          let featuredBlogs = data.filter((blog: any) => blog.isFeatured);
-          if (featuredBlogs.length === 0) {
-            featuredBlogs = data.slice(0, 4); // İlk 4 blog'u al
-          } else {
-            featuredBlogs = featuredBlogs.slice(0, 4); // İlk 4 featured blog'u al
-          }
-          setBlogs(featuredBlogs);
+          // Tarih sırasına göre sırala (en yeni en üstte)
+          const sortedBlogs = data.sort((a: any, b: any) => {
+            const dateA = new Date(a.publishedAt || a.createdAt || 0).getTime();
+            const dateB = new Date(b.publishedAt || b.createdAt || 0).getTime();
+            return dateB - dateA; // Azalan sıra (en yeni önce)
+          });
+          
+          // En yeni 4 blog'u al (en yeni eklenen ana kapakta olacak)
+          const latestBlogs = sortedBlogs.slice(0, 4);
+          setBlogs(latestBlogs);
         } else {
           console.error('Failed to fetch blogs');
         }
@@ -64,9 +66,9 @@ const BlogSection = () => {
               <Image
                 src={blog.imageUrl}
                 alt={blog.title}
-                width={600}
-                height={300}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
@@ -143,9 +145,9 @@ const BlogSection = () => {
               <Image
                 src={blog.imageUrl}
                 alt={blog.title}
-                width={400}
-                height={200}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
