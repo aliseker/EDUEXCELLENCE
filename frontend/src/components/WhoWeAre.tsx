@@ -53,7 +53,7 @@ const WhoWeAre = () => {
                   height={600}
                   className="w-full h-auto object-cover object-center"
                   style={{ objectPosition: 'center 30%' }}
-                  priority
+                  loading="lazy"
                 />
                 {/* Gradient Overlay */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400/20 to-transparent rounded-bl-3xl"></div>

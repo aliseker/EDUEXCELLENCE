@@ -233,8 +233,12 @@ export default function NewsDetailPage() {
                   dangerouslySetInnerHTML={{ 
                     __html: DOMPurify ? DOMPurify.sanitize(newsItem.fullContent, {
                       ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'a', 'img', 'blockquote', 'code', 'pre', 'span', 'div'],
-                      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'style']
-                    }) : newsItem.fullContent
+                      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id'],
+                      ALLOWED_URI_REGEXP: /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|data):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+                      ADD_ATTR: ['target', 'rel'],
+                      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
+                      FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button']
+                    }) : newsItem.fullContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Fallback: remove scripts
                   }}
                 />
               </div>

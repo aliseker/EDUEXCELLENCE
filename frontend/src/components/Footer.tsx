@@ -48,10 +48,12 @@ const Footer = () => {
         const data = await response.json();
         setContacts(data);
       } else {
-        console.error('Failed to fetch contacts');
+        // Silently fail and use fallback data
+        console.warn('Failed to fetch contacts, using fallback data');
       }
     } catch (error) {
-      console.error('Error fetching contacts:', error);
+      // Silently fail and use fallback data
+      console.warn('Error fetching contacts, using fallback data:', error);
     }
   };
 
@@ -65,17 +67,25 @@ const Footer = () => {
         const data = await response.json();
         setSocialMedias(data);
       } else {
-        console.error('Failed to fetch social medias');
+        // Silently fail - social media is optional
+        console.warn('Failed to fetch social medias');
       }
     } catch (error) {
-      console.error('Error fetching social medias:', error);
+      // Silently fail - social media is optional
+      console.warn('Error fetching social medias:', error);
     }
   };
 
   useEffect(() => {
     const loadData = async () => {
-      await Promise.all([fetchContacts(), fetchSocialMedias()]);
-      setLoading(false);
+      try {
+        await Promise.all([fetchContacts(), fetchSocialMedias()]);
+      } catch (error) {
+        // Silently handle errors - fallback data will be used
+        console.warn('Error loading footer data:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     loadData();
   }, []);
@@ -242,9 +252,12 @@ const Footer = () => {
                 <div>
                   <p className="text-gray-300 text-sm" dangerouslySetInnerHTML={{ 
                     __html: DOMPurify ? DOMPurify.sanitize(addressDetails, {
-                      ALLOWED_TAGS: ['br', 'strong', 'em', 'span'],
-                      ALLOWED_ATTR: []
-                    }) : addressDetails
+                      ALLOWED_TAGS: ['br'],
+                      ALLOWED_ATTR: [],
+                      KEEP_CONTENT: true,
+                      RETURN_DOM: false,
+                      RETURN_DOM_FRAGMENT: false
+                    }) : addressDetails.replace(/<[^>]*>/g, '') // Fallback: strip all HTML
                   }} />
                 </div>
               </div>
