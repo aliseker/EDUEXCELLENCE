@@ -50,8 +50,6 @@ export default function CourseDetailPage() {
         
         if (response.ok) {
           const apiCourse = await response.json();
-          console.log('API Course data:', apiCourse);
-          console.log('ImageUrl from API:', apiCourse.imageUrl);
           // Convert API data to component format
           const convertedCourse: Course = {
             id: apiCourse.id,

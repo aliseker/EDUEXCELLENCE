@@ -41,27 +41,21 @@ export default function MeetingsPage() {
       if (!projectId) return;
 
       try {
-        console.log('Fetching meetings for project:', projectId);
         const response = await fetch(`${API_BASE_URL}/Meeting/project/${projectId}`, {
           cache: 'no-store'
         });
-        console.log('Response status:', response.status);
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Meetings data:', data);
           setMeetings(data);
           
           // Set first image of first meeting as selected
           if (data.length > 0 && data[0].images && data[0].images.length > 0) {
-            console.log('First meeting images:', data[0].images);
             setSelectedImage(data[0].images[0]);
           }
-        } else {
-          console.error('Failed to fetch meetings, status:', response.status);
         }
       } catch (error) {
-        console.error('Error fetching meetings:', error);
+        // Error handled silently
       }
       setLoading(false);
     };

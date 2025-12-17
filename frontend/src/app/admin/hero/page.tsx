@@ -91,7 +91,7 @@ export default function HeroManagement() {
           }
         }
       } catch (error) {
-        console.log('No active hero found');
+        // No active hero found
       }
       
       setHeroes(heroesWithDisplay);
@@ -208,8 +208,6 @@ export default function HeroManagement() {
   };
 
   const startEdit = (hero: Hero) => {
-    console.log('🔍 Düzenlenen hero:', hero);
-    console.log('🔍 Hero items:', hero.items);
     setEditingHero(hero);
     setEditingFormData({
       id: hero.id,
@@ -217,7 +215,6 @@ export default function HeroManagement() {
       description: hero.description || '',
       items: (hero.items || []).map(item => ({ id: item.id, text: item.text }))
     });
-    console.log('✅ EditingFormData set edildi');
   };
 
   if (isLoading || !isAuthenticated) {

@@ -679,37 +679,26 @@ export default function AdminHome() {
         try {
           switch (type) {
             case 'blog':
-              console.log('Deleting blog with id:', id);
-              
               const blogResponse = await authenticatedFetch(`${API_BASE_URL}/Blogs/${id}`, {
                 method: 'DELETE'
               });
               
-              console.log('Blog delete response status:', blogResponse.status);
-              
               if (blogResponse.ok) {
-                console.log('Blog deleted successfully');
                 setBlogs(blogs.filter(blog => blog.id !== id));
                 toast.success('Blog/Haber başarıyla silindi!');
                 setShowConfirmModal(false);
               } else {
                 const errorText = await blogResponse.text();
-                console.error('Blog delete failed:', errorText);
                 toast.error('Blog/Haber silinemedi: ' + errorText);
               }
               break;
               
             case 'ka1course':
-              console.log('Deleting course with id:', id);
-              
               const courseResponse = await authenticatedFetch(`${API_BASE_URL}/Courses/${id}`, {
                 method: 'DELETE'
               });
               
-              console.log('Delete response status:', courseResponse.status);
-              
               if (courseResponse.ok) {
-                console.log('Course deleted successfully');
                 setCourses(courses.filter(course => course.id !== id));
                 setKa1Courses(ka1Courses.filter(course => course.id !== id));
                 toast.success('KA1 kursu başarıyla silindi!');
@@ -722,16 +711,11 @@ export default function AdminHome() {
               break;
               
             case 'ka2project':
-              console.log('Deleting KA2 project with id:', id);
-              
               const ka2Response = await authenticatedFetch(`${API_BASE_URL}/Ka2/${id}`, {
                 method: 'DELETE'
               });
               
-              console.log('KA2 delete response status:', ka2Response.status);
-              
               if (ka2Response.ok) {
-                console.log('KA2 project deleted successfully');
                 setKa2Projects(ka2Projects.filter(project => project.id !== id));
                 toast.success('KA2 projesi başarıyla silindi!');
                 setShowConfirmModal(false);
@@ -752,13 +736,9 @@ export default function AdminHome() {
   };
 
   const handleSave = async (type: string, data: any, e?: React.FormEvent) => {
-    console.log('handleSave called with type:', type, 'data:', data);
-    
     try {
       switch (type) {
         case 'blog':
-          console.log('Processing blog case...');
-          console.log('Selected images:', selectedImages);
           
           // Convert selected images to base64 or URLs (only if there are images)
           let imageUrls: string[] = [];
@@ -812,7 +792,6 @@ export default function AdminHome() {
                             }
                           }
                           
-                          console.log('Compressed image size:', compressedDataUrl.length);
                           resolve(compressedDataUrl);
                         } catch (error) {
                           console.error('Error compressing image:', error);
@@ -842,9 +821,6 @@ export default function AdminHome() {
                 })
               );
             } catch (error) {
-              console.error('Error processing images:', error);
-              console.log('Falling back to simple base64 conversion...');
-              
               // Fallback: simple base64 conversion without compression
               try {
                 imageUrls = await Promise.all(
@@ -857,7 +833,6 @@ export default function AdminHome() {
                     });
                   })
                 );
-                console.log('Fallback conversion successful');
               } catch (fallbackError) {
                 console.error('Fallback conversion also failed:', fallbackError);
                 alert('Resim işleme hatası: ' + fallbackError);
@@ -883,13 +858,8 @@ export default function AdminHome() {
             blogData.imageUrl = allImages[0];
           }
 
-          console.log('Blog data being sent:', blogData);
-          console.log('Selected images count:', selectedImages?.length || 0);
-          console.log('Image URLs count:', imageUrls.length);
-
           if (editingItem) {
             const updateData = { ...blogData, id: editingItem.id };
-            console.log('Updating blog with data:', updateData);
             
             const response = await authenticatedFetch(`${API_BASE_URL}/Blogs/${editingItem.id}`, {
               method: 'PUT',
@@ -899,11 +869,8 @@ export default function AdminHome() {
               body: JSON.stringify(updateData)
             });
             
-            console.log('Blog update response status:', response.status);
-            
             if (response.ok) {
               const updatedBlog = await response.json();
-              console.log('Updated blog:', updatedBlog);
               setBlogs(blogs.map(blog => blog.id === editingItem.id ? updatedBlog : blog));
             } else {
               const errorText = await response.text();
@@ -919,11 +886,8 @@ export default function AdminHome() {
               body: JSON.stringify(blogData)
             });
             
-            console.log('Blog create response status:', response.status);
-            
             if (response.ok) {
               const newBlog = await response.json();
-              console.log('Created blog:', newBlog);
               setBlogs([...blogs, newBlog]);
               alert('Blog başarıyla oluşturuldu!');
             } else {
@@ -980,10 +944,6 @@ export default function AdminHome() {
               learningOutcomes: courseData.learningOutcomes,
               dailyPrograms: courseData.dailyPrograms
             };
-            console.log('Updating course with data:', updateData);
-            console.log('StartDate type:', typeof updateData.startDate, 'Value:', updateData.startDate);
-            console.log('EndDate type:', typeof updateData.endDate, 'Value:', updateData.endDate);
-            
             const response = await authenticatedFetch(`${API_BASE_URL}/Courses/${editingItem.id}`, {
               method: 'PUT',
               headers: {
@@ -992,11 +952,8 @@ export default function AdminHome() {
               body: JSON.stringify(updateData)
             });
             
-            console.log('Update response status:', response.status);
-            
             if (response.ok) {
               const updatedCourse = await response.json();
-              console.log('Updated course:', updatedCourse);
               setCourses(courses.map(course => course.id === editingItem.id ? updatedCourse : course));
               setKa1Courses(ka1Courses.map(course => course.id === editingItem.id ? updatedCourse : course));
               toast.success('Kurs başarıyla güncellendi!');
@@ -1009,7 +966,6 @@ export default function AdminHome() {
               toast.error('Kurs güncelleme başarısız: ' + errorText);
             }
           } else {
-            console.log('Creating course with data:', courseData);
             const response = await authenticatedFetch(`${API_BASE_URL}/Courses`, {
               method: 'POST',
               headers: {
@@ -1018,11 +974,8 @@ export default function AdminHome() {
               body: JSON.stringify(courseData)
             });
             
-            console.log('Create response status:', response.status);
-            
             if (response.ok) {
               const newCourse = await response.json();
-              console.log('Created course:', newCourse);
               setCourses([...courses, newCourse]);
               setKa1Courses([...ka1Courses, newCourse]);
               toast.success('Kurs başarıyla oluşturuldu!');
@@ -1051,8 +1004,6 @@ export default function AdminHome() {
 
           if (editingItem) {
             const updateData = { ...projectData, id: editingItem.id };
-            console.log('Updating KA2 project with data:', updateData);
-            
             const response = await authenticatedFetch(`${API_BASE_URL}/Ka2/${editingItem.id}`, {
               method: 'PUT',
               headers: {
@@ -1061,11 +1012,8 @@ export default function AdminHome() {
               body: JSON.stringify(updateData)
             });
             
-            console.log('KA2 update response status:', response.status);
-            
             if (response.ok) {
               const updatedProject = await response.json();
-              console.log('Updated KA2 project:', updatedProject);
               setKa2Projects(ka2Projects.map(project => project.id === editingItem.id ? updatedProject : project));
             } else {
               const errorText = await response.text();
@@ -1081,11 +1029,8 @@ export default function AdminHome() {
               body: JSON.stringify(projectData)
             });
             
-            console.log('KA2 create response status:', response.status);
-            
             if (response.ok) {
               const newProject = await response.json();
-              console.log('Created KA2 project:', newProject);
               setKa2Projects([...ka2Projects, newProject]);
             } else {
               const errorText = await response.text();
@@ -1251,7 +1196,6 @@ export default function AdminHome() {
                         }
                       }
                       
-                      console.log('Compressed image size:', compressedDataUrl.length);
                       resolve(compressedDataUrl);
                     } catch (error) {
                       console.error('Error compressing image:', error);
@@ -1281,9 +1225,6 @@ export default function AdminHome() {
             })
           );
         } catch (error) {
-          console.error('Error processing images:', error);
-          console.log('Falling back to simple base64 conversion...');
-          
           // Fallback: simple base64 conversion without compression
           try {
             uploadedImageUrls = await Promise.all(
@@ -1296,7 +1237,6 @@ export default function AdminHome() {
                 });
               })
             );
-            console.log('Fallback conversion successful');
           } catch (fallbackError) {
             console.error('Fallback conversion also failed:', fallbackError);
             toast.error('Resim işleme hatası: ' + fallbackError);
@@ -1551,7 +1491,6 @@ export default function AdminHome() {
                         }
                       }
                       
-                      console.log('Compressed image size:', compressedDataUrl.length);
                       resolve(compressedDataUrl);
                     } catch (error) {
                       console.error('Error compressing image:', error);
@@ -1581,9 +1520,6 @@ export default function AdminHome() {
             })
           );
         } catch (error) {
-          console.error('Error processing images:', error);
-          console.log('Falling back to simple base64 conversion...');
-          
           // Fallback: simple base64 conversion without compression
           try {
             uploadedImageUrls = await Promise.all(
@@ -1596,7 +1532,6 @@ export default function AdminHome() {
                 });
               })
             );
-            console.log('Fallback conversion successful');
           } catch (fallbackError) {
             console.error('Fallback conversion also failed:', fallbackError);
             toast.error('Resim işleme hatası: ' + fallbackError);

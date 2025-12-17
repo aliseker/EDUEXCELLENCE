@@ -5,6 +5,8 @@ using EduExcellence.Domain.Entities;
 using EduExcellence.Domain.Interfaces;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
+using EduExcellence.Application.Services;
 
 namespace EduExcellence.WebApi.Controllers
 {
@@ -14,11 +16,19 @@ namespace EduExcellence.WebApi.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailService _emailService;
+        private readonly IRateLimitService _rateLimitService;
+        private readonly ILogger<ContactController> _logger;
 
-        public ContactController(IUnitOfWork unitOfWork, IEmailService emailService)
+        public ContactController(
+            IUnitOfWork unitOfWork, 
+            IEmailService emailService,
+            IRateLimitService rateLimitService,
+            ILogger<ContactController> logger)
         {
             _unitOfWork = unitOfWork;
             _emailService = emailService;
+            _rateLimitService = rateLimitService;
+            _logger = logger;
         }
 
         // Public endpoints (no authorization required)
@@ -70,6 +80,21 @@ namespace EduExcellence.WebApi.Controllers
                     });
                 }
 
+                // Rate limiting by IP
+                var clientIp = GetClientIpAddress();
+                if (!_rateLimitService.IsAllowed($"contact_email_ip_{clientIp}", maxAttempts: 3, window: TimeSpan.FromMinutes(15)))
+                {
+                    _logger.LogWarning($"Rate limit exceeded for IP: {clientIp}");
+                    return StatusCode(429, new { message = "Çok fazla istek gönderdiniz. Lütfen 15 dakika sonra tekrar deneyin." });
+                }
+
+                // Rate limiting by email
+                if (!_rateLimitService.IsAllowed($"contact_email_addr_{request.Email?.Trim().ToLower()}", maxAttempts: 5, window: TimeSpan.FromHours(1)))
+                {
+                    _logger.LogWarning($"Rate limit exceeded for email: {request.Email}");
+                    return StatusCode(429, new { message = "Bu e-posta adresinden çok fazla mesaj gönderildi. Lütfen daha sonra tekrar deneyin." });
+                }
+
                 // Additional server-side validation
                 if (string.IsNullOrWhiteSpace(request.Name))
                 {
@@ -91,28 +116,42 @@ namespace EduExcellence.WebApi.Controllers
                     return BadRequest(new { message = "Mesaj zorunludur" });
                 }
 
+                // Sanitize inputs to prevent XSS
+                var sanitizedName = SanitizeInput(request.Name.Trim());
+                var sanitizedEmail = SanitizeEmail(request.Email.Trim());
+                var sanitizedPhone = !string.IsNullOrWhiteSpace(request.Phone) ? SanitizeInput(request.Phone.Trim()) : string.Empty;
+                var sanitizedSubject = SanitizeInput(request.Subject.Trim());
+                var sanitizedMessage = SanitizeInput(request.Message.Trim());
+
                 // Validate name format (only letters and spaces, Turkish characters allowed)
-                if (!Regex.IsMatch(request.Name.Trim(), @"^[a-zA-ZğüşöçİĞÜŞÖÇ\s]+$"))
+                if (!Regex.IsMatch(sanitizedName, @"^[a-zA-ZğüşöçİĞÜŞÖÇıİ\s]+$"))
                 {
                     return BadRequest(new { message = "Ad Soyad sadece harf içermelidir" });
                 }
 
                 // Validate name length
-                if (request.Name.Trim().Length < 3 || request.Name.Trim().Length > 100)
+                if (sanitizedName.Length < 3 || sanitizedName.Length > 100)
                 {
                     return BadRequest(new { message = "Ad Soyad 3 ile 100 karakter arasında olmalıdır" });
                 }
 
-                // Validate email format
-                if (!Regex.IsMatch(request.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+                // Validate email format and prevent email injection
+                if (!IsValidEmail(sanitizedEmail))
                 {
                     return BadRequest(new { message = "Geçerli bir e-posta adresi giriniz" });
                 }
 
-                // Validate phone format if provided
-                if (!string.IsNullOrWhiteSpace(request.Phone))
+                // Prevent email injection attacks
+                if (ContainsEmailInjectionChars(sanitizedEmail))
                 {
-                    var cleanPhone = Regex.Replace(request.Phone, @"[\s\-\(\)]", "");
+                    _logger.LogWarning($"Email injection attempt detected from IP: {clientIp}, Email: {sanitizedEmail}");
+                    return BadRequest(new { message = "Geçersiz e-posta formatı" });
+                }
+
+                // Validate phone format if provided
+                if (!string.IsNullOrWhiteSpace(sanitizedPhone))
+                {
+                    var cleanPhone = Regex.Replace(sanitizedPhone, @"[\s\-\(\)]", "");
                     if (!Regex.IsMatch(cleanPhone, @"^(\+90|0)?5\d{9}$"))
                     {
                         return BadRequest(new { message = "Geçerli bir Türk telefon numarası giriniz (örn: +90 555 555 55 55)" });
@@ -120,32 +159,105 @@ namespace EduExcellence.WebApi.Controllers
                 }
 
                 // Validate subject length
-                if (request.Subject.Trim().Length < 5 || request.Subject.Trim().Length > 200)
+                if (sanitizedSubject.Length < 5 || sanitizedSubject.Length > 200)
                 {
                     return BadRequest(new { message = "Konu 5 ile 200 karakter arasında olmalıdır" });
                 }
 
                 // Validate message length
-                if (request.Message.Trim().Length < 10 || request.Message.Trim().Length > 2000)
+                if (sanitizedMessage.Length < 10 || sanitizedMessage.Length > 2000)
                 {
                     return BadRequest(new { message = "Mesaj 10 ile 2000 karakter arasında olmalıdır" });
                 }
 
                 // Send email using the email service
                 await _emailService.SendContactNotificationAsync(
-                    request.Name.Trim(),
-                    request.Email.Trim(),
-                    request.Phone?.Trim() ?? string.Empty,
-                    request.Subject.Trim(),
-                    request.Message.Trim()
+                    sanitizedName,
+                    sanitizedEmail,
+                    sanitizedPhone,
+                    sanitizedSubject,
+                    sanitizedMessage
                 );
 
+                _logger.LogInformation($"Contact email sent successfully from {sanitizedEmail}");
                 return Ok(new { message = "Email sent successfully" });
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, $"Failed to send contact email");
                 return StatusCode(500, new { message = "Failed to send email", error = ex.Message });
             }
+        }
+
+        private string GetClientIpAddress()
+        {
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            
+            // Check for forwarded IP (if behind proxy/load balancer)
+            if (Request.Headers.ContainsKey("X-Forwarded-For"))
+            {
+                ipAddress = Request.Headers["X-Forwarded-For"].ToString().Split(',').FirstOrDefault()?.Trim();
+            }
+            else if (Request.Headers.ContainsKey("X-Real-IP"))
+            {
+                ipAddress = Request.Headers["X-Real-IP"].ToString();
+            }
+
+            return ipAddress ?? "unknown";
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            try
+            {
+                // RFC 5322 compliant regex pattern
+                var pattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+                return Regex.IsMatch(email, pattern, RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                return false;
+            }
+        }
+
+        private bool ContainsEmailInjectionChars(string email)
+        {
+            // Check for email injection attempts (newlines, carriage returns, etc.)
+            var dangerousChars = new[] { '\r', '\n', '\0', '\b', '\t' };
+            return dangerousChars.Any(c => email.Contains(c));
+        }
+
+        private string SanitizeInput(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            // Remove potentially dangerous HTML/script tags
+            var sanitized = Regex.Replace(input, @"<[^>]*>", string.Empty);
+            
+            // Remove control characters and dangerous characters
+            sanitized = Regex.Replace(sanitized, @"[\x00-\x1F\x7F]", string.Empty);
+            
+            // Trim and normalize whitespace
+            return sanitized.Trim();
+        }
+
+        private string SanitizeEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return email;
+
+            // Remove dangerous characters that could be used for email injection
+            var sanitized = Regex.Replace(email, @"[\r\n\0\b\t]", string.Empty);
+            
+            // Remove any whitespace
+            sanitized = sanitized.Trim();
+            
+            // Convert to lowercase for consistency
+            return sanitized.ToLowerInvariant();
         }
 
         // Admin endpoints (authorization required)

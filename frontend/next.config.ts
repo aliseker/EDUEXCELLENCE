@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   // Performance optimizations
   reactStrictMode: true,
   
@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
+            value: 'DENY'
           },
           {
             key: 'X-Content-Type-Options',
@@ -42,14 +42,16 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://edu-excellence.net",
+              "script-src 'self' 'unsafe-inline' https://edu-excellence.net",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com data:",
               "connect-src 'self' https://edu-excellence.net https://localhost:7166",
-              "frame-ancestors 'self'",
+              "frame-ancestors 'none'",
               "base-uri 'self'",
-              "form-action 'self'"
+              "form-action 'self'",
+              "object-src 'none'",
+              "upgrade-insecure-requests"
             ].join('; ')
           }
         ],
@@ -57,9 +59,11 @@ const nextConfig: NextConfig = {
     ];
   },
   
-  // Optimize production builds
+  // Optimize production builds - Remove all console logs for security
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: {
+      exclude: ['error'], // Keep only console.error for critical errors
+    },
   },
   
   eslint: {

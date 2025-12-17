@@ -26,9 +26,20 @@ interface SocialMedia {
 }
 
 const Footer = () => {
+  // Fallback data
+  const fallbackContacts = {
+    address: "Kısla Mah. 37 Sk. Cengizhan Apt. B Girişi No: 6<br />İç Kapı No: 102 Muratpaşa, Antalya / Türkiye",
+    phone: "+90 505 274 90 36",
+    email: "info@edu-excellence.net"
+  };
+
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [socialMedias, setSocialMedias] = useState<SocialMedia[]>([]);
   const [loading, setLoading] = useState(true);
+  // Initialize with fallback values to prevent hydration mismatch
+  const [addressDetails, setAddressDetails] = useState<string>(fallbackContacts.address);
+  const [phoneDetails, setPhoneDetails] = useState<string>(fallbackContacts.phone);
+  const [emailDetails, setEmailDetails] = useState<string>(fallbackContacts.email);
   
   // DOMPurify only works in browser
   const DOMPurify = useMemo(() => {
@@ -49,11 +60,9 @@ const Footer = () => {
         setContacts(data);
       } else {
         // Silently fail and use fallback data
-        console.warn('Failed to fetch contacts, using fallback data');
       }
     } catch (error) {
       // Silently fail and use fallback data
-      console.warn('Error fetching contacts, using fallback data:', error);
     }
   };
 
@@ -68,11 +77,9 @@ const Footer = () => {
         setSocialMedias(data);
       } else {
         // Silently fail - social media is optional
-        console.warn('Failed to fetch social medias');
       }
     } catch (error) {
       // Silently fail - social media is optional
-      console.warn('Error fetching social medias:', error);
     }
   };
 
@@ -82,7 +89,6 @@ const Footer = () => {
         await Promise.all([fetchContacts(), fetchSocialMedias()]);
       } catch (error) {
         // Silently handle errors - fallback data will be used
-        console.warn('Error loading footer data:', error);
       } finally {
         setLoading(false);
       }
@@ -104,16 +110,18 @@ const Footer = () => {
     return null;
   };
 
-  // Fallback data
-  const fallbackContacts = {
-    address: "Kısla Mah. 37 Sk. Cengizhan Apt. B Girişi No: 6<br />İç Kapı No: 102 Muratpaşa, Antalya / Türkiye",
-    phone: "+90 505 274 90 36",
-    email: "info@edu-excellence.net"
-  };
-
-  const addressDetails = getContactDetails('address') || fallbackContacts.address;
-  const phoneDetails = getContactDetails('phone') || fallbackContacts.phone;
-  const emailDetails = getContactDetails('email') || fallbackContacts.email;
+  // Update contact details when contacts change (client-side only)
+  useEffect(() => {
+    if (!loading && contacts.length > 0) {
+      const address = getContactDetails('address') || fallbackContacts.address;
+      const phone = getContactDetails('phone') || fallbackContacts.phone;
+      const email = getContactDetails('email') || fallbackContacts.email;
+      
+      setAddressDetails(address);
+      setPhoneDetails(phone);
+      setEmailDetails(email);
+    }
+  }, [contacts, loading]);
 
   // Platform icons and colors
   const PLATFORM_ICONS: { [key: string]: string } = {
@@ -250,7 +258,7 @@ const Footer = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
                 <div>
-                  <p className="text-gray-300 text-sm" dangerouslySetInnerHTML={{ 
+                  <p className="text-gray-300 text-sm" suppressHydrationWarning dangerouslySetInnerHTML={{ 
                     __html: DOMPurify ? DOMPurify.sanitize(addressDetails, {
                       ALLOWED_TAGS: ['br'],
                       ALLOWED_ATTR: [],
@@ -266,10 +274,10 @@ const Footer = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
                 <a 
-                  href={'tel:' + phoneDetails.replace(/[^\d+]/g, '')}
+                  href={'tel:' + (loading ? fallbackContacts.phone : phoneDetails).replace(/[^\d+]/g, '')}
                   className="text-gray-300 hover:text-white text-sm transition-colors duration-200 cursor-pointer"
                 >
-                  {phoneDetails}
+                  {loading ? fallbackContacts.phone : phoneDetails}
                 </a>
               </div>
               <div className="flex items-center space-x-3">
@@ -277,10 +285,10 @@ const Footer = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
                 <a 
-                  href={'mailto:' + emailDetails}
+                  href={'mailto:' + (loading ? fallbackContacts.email : emailDetails)}
                   className="text-gray-300 hover:text-white text-sm transition-colors duration-200 cursor-pointer"
                 >
-                  {emailDetails}
+                  {loading ? fallbackContacts.email : emailDetails}
                 </a>
               </div>
             </div>

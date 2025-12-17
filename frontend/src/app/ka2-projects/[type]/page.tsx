@@ -126,22 +126,18 @@ export default function KA2ProjectPage() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        console.log(`Fetching projects for type: ${projectType.toUpperCase()}`);
         // Fetch all projects and filter by type
         const response = await fetch(`${API_BASE_URL}/Ka2`, {
           cache: 'no-store'
         });
-        console.log(`Response status: ${response.status}`);
         
         if (response.ok) {
           const apiProjects = await response.json();
-          console.log(`Fetched all projects:`, apiProjects);
           
           // Filter by type
           const filteredProjects = apiProjects.filter((project: Ka2Project) => 
             project.type.toUpperCase() === projectType.toUpperCase()
           );
-          console.log(`Filtered projects for ${projectType}:`, filteredProjects);
           
           // Sort projects by updatedAt or createdAt (most recent first)
           const sortedProjects = filteredProjects.sort((a: Ka2Project, b: Ka2Project) => {
@@ -149,7 +145,6 @@ export default function KA2ProjectPage() {
             const dateB = new Date(b.updatedAt || b.createdAt);
             return dateB.getTime() - dateA.getTime(); // En yeni önce
           });
-          console.log(`Sorted projects:`, sortedProjects);
           setProjects(sortedProjects);
         } else {
           const errorText = await response.text();

@@ -63,6 +63,86 @@ const ContactPage = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error' | null, message: string }>({ type: null, message: '' });
 
+  // Client-side rate limiting
+  const checkRateLimit = (): { allowed: boolean; message: string } => {
+    if (typeof window === 'undefined') return { allowed: true, message: '' };
+
+    const RATE_LIMIT_KEY = 'contact_form_rate_limit';
+    const MAX_ATTEMPTS = 3;
+    const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+    try {
+      const stored = localStorage.getItem(RATE_LIMIT_KEY);
+      if (!stored) {
+        return { allowed: true, message: '' };
+      }
+
+      const data = JSON.parse(stored);
+      const now = Date.now();
+      const timeSinceFirstAttempt = now - data.firstAttempt;
+
+      // Reset if window has passed
+      if (timeSinceFirstAttempt > WINDOW_MS) {
+        localStorage.removeItem(RATE_LIMIT_KEY);
+        return { allowed: true, message: '' };
+      }
+
+      // Check if limit exceeded
+      if (data.attempts >= MAX_ATTEMPTS) {
+        const remainingMinutes = Math.ceil((WINDOW_MS - timeSinceFirstAttempt) / (60 * 1000));
+        return {
+          allowed: false,
+          message: `Çok fazla istek gönderdiniz. Lütfen ${remainingMinutes} dakika sonra tekrar deneyin.`
+        };
+      }
+
+      return { allowed: true, message: '' };
+    } catch (error) {
+      // If there's an error reading from localStorage, allow the request
+      return { allowed: true, message: '' };
+    }
+  };
+
+  const recordRateLimitAttempt = () => {
+    if (typeof window === 'undefined') return;
+
+    const RATE_LIMIT_KEY = 'contact_form_rate_limit';
+    const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+    try {
+      const stored = localStorage.getItem(RATE_LIMIT_KEY);
+      const now = Date.now();
+
+      if (!stored) {
+        // First attempt
+        localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({
+          firstAttempt: now,
+          attempts: 1
+        }));
+      } else {
+        const data = JSON.parse(stored);
+        const timeSinceFirstAttempt = now - data.firstAttempt;
+
+        if (timeSinceFirstAttempt > WINDOW_MS) {
+          // Reset window
+          localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({
+            firstAttempt: now,
+            attempts: 1
+          }));
+        } else {
+          // Increment attempts
+          localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({
+            firstAttempt: data.firstAttempt,
+            attempts: data.attempts + 1
+          }));
+        }
+      }
+    } catch (error) {
+      // Silently fail - rate limiting is best effort on client side
+      // Console log removed for security
+    }
+  };
+
   // Fetch contacts from API
   const fetchContacts = async () => {
     try {
@@ -143,12 +223,35 @@ const ContactPage = () => {
     if (!email.trim()) {
       return 'Email address is required';
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    
+    const trimmedEmail = email.trim();
+    
+    // Basic email format validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       return 'Please enter a valid email address';
     }
-    if (email.trim().length > 100) {
+    
+    // Check for email injection attempts
+    if (/[\r\n\0\b\t]/.test(trimmedEmail)) {
+      return 'Email contains invalid characters';
+    }
+    
+    // Check length
+    if (trimmedEmail.length > 100) {
       return 'Email must be maximum 100 characters';
     }
+    
+    // Check for multiple @ symbols
+    if ((trimmedEmail.match(/@/g) || []).length > 1) {
+      return 'Email can only contain one @ symbol';
+    }
+    
+    // Check for valid domain
+    const parts = trimmedEmail.split('@');
+    if (parts.length !== 2 || parts[1].split('.').length < 2) {
+      return 'Please enter a valid email address';
+    }
+    
     return '';
   };
 
@@ -256,6 +359,16 @@ const ContactPage = () => {
     e.preventDefault();
     setFormStatus({ type: null, message: '' });
 
+    // Client-side rate limiting check
+    const rateLimitCheck = checkRateLimit();
+    if (!rateLimitCheck.allowed) {
+      setFormStatus({ 
+        type: 'error', 
+        message: rateLimitCheck.message 
+      });
+      return;
+    }
+
     // Validate all fields before submission
     if (!validateForm()) {
       setFormStatus({ 
@@ -277,6 +390,9 @@ const ContactPage = () => {
       });
 
       if (response.ok) {
+        // Record successful submission for rate limiting
+        recordRateLimitAttempt();
+        
         setFormStatus({ 
           type: 'success', 
           message: 'Your message has been sent successfully! We will get back to you as soon as possible.' 
@@ -296,11 +412,21 @@ const ContactPage = () => {
           message: ''
         });
       } else {
-        const errorData = await response.json();
-        setFormStatus({ 
-          type: 'error', 
-          message: errorData.message || 'Message could not be sent. Please try again.' 
-        });
+        // Check if it's a rate limit error (429)
+        if (response.status === 429) {
+          recordRateLimitAttempt();
+          const errorData = await response.json();
+          setFormStatus({ 
+            type: 'error', 
+            message: errorData.message || 'Çok fazla istek gönderdiniz. Lütfen daha sonra tekrar deneyin.' 
+          });
+        } else {
+          const errorData = await response.json();
+          setFormStatus({ 
+            type: 'error', 
+            message: errorData.message || 'Message could not be sent. Please try again.' 
+          });
+        }
       }
     } catch (error) {
       console.error('Error sending email:', error);

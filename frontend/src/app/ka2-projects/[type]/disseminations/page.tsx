@@ -41,27 +41,21 @@ export default function DisseminationsPage() {
       if (!projectId) return;
 
       try {
-        console.log('Fetching disseminations for project:', projectId);
         const response = await fetch(`${API_BASE_URL}/Dissemination/project/${projectId}`, {
           cache: 'no-store'
         });
-        console.log('Response status:', response.status);
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Disseminations data:', data);
           setDisseminations(data);
           
           // Set first image of first dissemination as selected
           if (data.length > 0 && data[0].images && data[0].images.length > 0) {
-            console.log('First dissemination images:', data[0].images);
             setSelectedImage(data[0].images[0]);
           }
-        } else {
-          console.error('Failed to fetch disseminations, status:', response.status);
         }
       } catch (error) {
-        console.error('Error fetching disseminations:', error);
+        // Error handled silently
       }
       setLoading(false);
     };

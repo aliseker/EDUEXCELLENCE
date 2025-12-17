@@ -34,12 +34,25 @@ namespace EduExcellence.Application.Services
 
                 var message = new MimeMessage();
                 
-                message.From.Add(new MailboxAddress(
-                    _configuration["SmtpSettings:FromName"],
-                    _configuration["SmtpSettings:FromEmail"]
-                ));
+                // Prevent email injection in From address
+                var fromName = SanitizeInput(_configuration["SmtpSettings:FromName"] ?? "EduExcellence");
+                var fromEmail = SanitizeEmail(_configuration["SmtpSettings:FromEmail"]);
                 
-                message.To.Add(MailboxAddress.Parse(to));
+                if (!IsValidEmail(fromEmail))
+                {
+                    throw new InvalidOperationException("Invalid From email address in configuration");
+                }
+
+                message.From.Add(new MailboxAddress(fromName, fromEmail));
+                
+                // Prevent email injection in To address
+                var sanitizedTo = SanitizeEmail(to);
+                if (!IsValidEmail(sanitizedTo))
+                {
+                    throw new ArgumentException("Invalid email address format", nameof(to));
+                }
+                
+                message.To.Add(MailboxAddress.Parse(sanitizedTo));
                 message.Subject = SanitizeSubject(subject);
                 
                 var bodyBuilder = new BodyBuilder();
@@ -118,7 +131,57 @@ namespace EduExcellence.Application.Services
                 return "No Subject";
 
             // Remove potentially dangerous characters
-            return subject.Replace("\r", "").Replace("\n", " ").Trim();
+            var sanitized = subject.Replace("\r", "").Replace("\n", " ").Trim();
+            
+            // Remove control characters
+            sanitized = Regex.Replace(sanitized, @"[\x00-\x1F\x7F]", string.Empty);
+            
+            // Limit length to prevent header injection
+            if (sanitized.Length > 200)
+            {
+                sanitized = sanitized.Substring(0, 200);
+            }
+            
+            return sanitized;
+        }
+
+        private string SanitizeInput(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            // Remove potentially dangerous HTML/script tags
+            var sanitized = Regex.Replace(input, @"<[^>]*>", string.Empty);
+            
+            // Remove control characters and dangerous characters
+            sanitized = Regex.Replace(sanitized, @"[\x00-\x1F\x7F]", string.Empty);
+            
+            // Trim and normalize whitespace
+            return sanitized.Trim();
+        }
+
+        private string SanitizeEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return email;
+
+            // Remove dangerous characters that could be used for email injection
+            var sanitized = Regex.Replace(email, @"[\r\n\0\b\t]", string.Empty);
+            
+            // Remove any whitespace
+            sanitized = sanitized.Trim();
+            
+            // Convert to lowercase for consistency
+            return sanitized.ToLowerInvariant();
+        }
+
+        private string HtmlEncode(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return input;
+
+            // HTML encode to prevent XSS
+            return System.Net.WebUtility.HtmlEncode(input);
         }
 
         public async Task SendContactNotificationAsync(string customerName, string customerEmail, string customerPhone, string subject, string message)
@@ -129,11 +192,15 @@ namespace EduExcellence.Application.Services
             {
                 throw new Exception("Admin notification email is not configured");
             }
-            
-            // Telefon numarası formatı
-            var phoneDisplay = string.IsNullOrWhiteSpace(customerPhone) 
+
+            // Sanitize all inputs to prevent XSS
+            var sanitizedName = HtmlEncode(customerName);
+            var sanitizedEmail = HtmlEncode(customerEmail);
+            var sanitizedPhone = string.IsNullOrWhiteSpace(customerPhone) 
                 ? "Belirtilmemiş" 
-                : customerPhone;
+                : HtmlEncode(customerPhone);
+            var sanitizedSubject = HtmlEncode(subject);
+            var sanitizedMessage = HtmlEncode(message);
             
             var emailBody = $@"
                 <html>
@@ -159,23 +226,23 @@ namespace EduExcellence.Application.Services
                         <div class='content'>
                             <div class='field'>
                                 <div class='field-label'>👤 Gönderen:</div>
-                                <div class='field-value'>{customerName}</div>
+                                <div class='field-value'>{sanitizedName}</div>
                             </div>
                             <div class='field'>
                                 <div class='field-label'>📧 E-posta:</div>
-                                <div class='field-value'>{customerEmail}</div>
+                                <div class='field-value'>{sanitizedEmail}</div>
                             </div>
                             <div class='field'>
                                 <div class='field-label'>📱 Telefon:</div>
-                                <div class='field-value'>{phoneDisplay}</div>
+                                <div class='field-value'>{sanitizedPhone}</div>
                             </div>
                             <div class='field'>
                                 <div class='field-label'>📋 Konu:</div>
-                                <div class='field-value'>{subject}</div>
+                                <div class='field-value'>{sanitizedSubject}</div>
                             </div>
                             <div class='field'>
                                 <div class='field-label'>💬 Mesaj:</div>
-                                <div class='message-box'>{message}</div>
+                                <div class='message-box'>{sanitizedMessage}</div>
                             </div>
                         </div>
                         <div class='footer'>
@@ -187,7 +254,7 @@ namespace EduExcellence.Application.Services
                 </html>
             ";
 
-            await SendEmailAsync(adminEmail, $"İletişim Formu: {subject}", emailBody, true);
+            await SendEmailAsync(adminEmail, $"İletişim Formu: {sanitizedSubject}", emailBody, true);
         }
 
         public async Task SendPasswordResetEmailAsync(string email, string resetUrl, string firstName)

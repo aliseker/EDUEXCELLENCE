@@ -38,7 +38,6 @@ const NewsPage = () => {
         });
         if (response.ok) {
           const apiBlogs = await response.json();
-          console.log('API Response:', apiBlogs); // Debug için
           
           // Tarihe göre en yeniden en eskiye sırala (en son yüklenen en başta)
           apiBlogs.sort((a: any, b: any) => {
@@ -164,7 +163,6 @@ const NewsPage = () => {
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
-                          console.log('Image load error for:', item.title, 'URL:', item.imageUrl);
                           e.currentTarget.style.display = 'none';
                           // Fallback göster
                           const fallback = e.currentTarget.nextElementSibling as HTMLElement;

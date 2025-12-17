@@ -263,7 +263,6 @@ const LatestCourses = () => {
             createdAt: course.createdAt
           }));
           
-        console.log('API Courses count:', convertedCourses.length);
         setCourses(convertedCourses);
         // Apply current filters to the new courses
         handleFilterChange(filters, convertedCourses);
@@ -368,7 +367,6 @@ const LatestCourses = () => {
       }
     }
 
-    console.log('Filtered courses count:', filtered.length);
     setFilteredCourses(filtered);
   };
 
