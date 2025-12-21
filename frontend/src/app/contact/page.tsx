@@ -213,7 +213,8 @@ const ContactPage = () => {
     if (name.trim().length > 100) {
       return 'Name must be maximum 100 characters';
     }
-    if (!/^[a-zA-ZğüşöçİĞÜŞÖÇıİ\s]+$/.test(name.trim())) {
+    // Turkish characters: ğ, ü, ş, ö, ç, ı, İ, Ğ, Ü, Ş, Ö, Ç, I (English capital I)
+    if (!/^[a-zA-ZğüşöçİĞÜŞÖÇıI\s]+$/.test(name.trim())) {
       return 'Name must contain only letters';
     }
     return '';

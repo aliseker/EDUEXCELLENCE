@@ -66,10 +66,9 @@ const nextConfig = {
     },
   },
   
-  eslint: {
-    // Production build sırasında ESLint hatalarını ignore et
-    ignoreDuringBuilds: true,
-  },
+  // eslint config kaldırıldı - Next.js 16.0.10'da artık desteklenmiyor
+  // ESLint artık ayrı komut olarak çalışıyor: npm run lint veya next lint
+  
   typescript: {
     // Production build sırasında TypeScript hatalarını ignore et
     ignoreBuildErrors: true,
