@@ -5,6 +5,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace EduExcellence.Application.Services
 {
@@ -43,7 +44,8 @@ namespace EduExcellence.Application.Services
                     throw new InvalidOperationException("Invalid From email address in configuration");
                 }
 
-                message.From.Add(new MailboxAddress(fromName, fromEmail));
+                // Use UTF-8 encoding for Turkish characters
+                message.From.Add(new MailboxAddress(Encoding.UTF8, fromName, fromEmail));
                 
                 // Prevent email injection in To address
                 var sanitizedTo = SanitizeEmail(to);
@@ -58,6 +60,7 @@ namespace EduExcellence.Application.Services
                 var bodyBuilder = new BodyBuilder();
                 if (isHtml)
                 {
+                    // Ensure UTF-8 encoding for Turkish characters in HTML body
                     bodyBuilder.HtmlBody = body;
                 }
                 else
@@ -65,6 +68,9 @@ namespace EduExcellence.Application.Services
                     bodyBuilder.TextBody = body;
                 }
                 message.Body = bodyBuilder.ToMessageBody();
+                
+                // Set charset to UTF-8 for proper Turkish character encoding
+                message.Body.ContentType.Charset = "utf-8";
 
                 using var client = new SmtpClient();
                 
@@ -130,10 +136,10 @@ namespace EduExcellence.Application.Services
             if (string.IsNullOrWhiteSpace(subject))
                 return "No Subject";
 
-            // Remove potentially dangerous characters
+            // Remove potentially dangerous characters (newlines, but preserve Turkish characters)
             var sanitized = subject.Replace("\r", "").Replace("\n", " ").Trim();
             
-            // Remove control characters
+            // Remove control characters (but preserve Turkish characters)
             sanitized = Regex.Replace(sanitized, @"[\x00-\x1F\x7F]", string.Empty);
             
             // Limit length to prevent header injection
@@ -153,7 +159,8 @@ namespace EduExcellence.Application.Services
             // Remove potentially dangerous HTML/script tags
             var sanitized = Regex.Replace(input, @"<[^>]*>", string.Empty);
             
-            // Remove control characters and dangerous characters
+            // Remove control characters and dangerous characters (but preserve Turkish characters)
+            // Only remove ASCII control characters (0x00-0x1F and 0x7F), not extended characters
             sanitized = Regex.Replace(sanitized, @"[\x00-\x1F\x7F]", string.Empty);
             
             // Trim and normalize whitespace
@@ -205,6 +212,7 @@ namespace EduExcellence.Application.Services
             var emailBody = $@"
                 <html>
                 <head>
+                    <meta charset=""UTF-8"">
                     <style>
                         body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; }}
                         .container {{ max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
@@ -264,6 +272,7 @@ namespace EduExcellence.Application.Services
             var emailBody = $@"
                 <html>
                 <head>
+                    <meta charset=""UTF-8"">
                     <style>
                         body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; }}
                         .container {{ max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
@@ -321,6 +330,7 @@ namespace EduExcellence.Application.Services
             var emailBody = $@"
                 <html>
                 <head>
+                    <meta charset=""UTF-8"">
                     <style>
                         body {{ font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 20px; }}
                         .container {{ max-width: 600px; margin: 0 auto; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }}
