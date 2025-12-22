@@ -46,7 +46,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com data:",
-              "connect-src 'self' https://edu-excellence.net https://localhost:7166",
+              "connect-src 'self' https://edu-excellence.net",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

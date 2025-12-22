@@ -125,7 +125,8 @@ namespace EduExcellence.WebApi.Controllers
 
                 // Validate name format (only letters and spaces, Turkish characters allowed)
                 // Includes: a-z, A-Z, ğ, ü, ş, ö, ç, ı, İ, Ğ, Ü, Ş, Ö, Ç, I (English capital I)
-                if (!Regex.IsMatch(sanitizedName, @"^[a-zA-ZğüşöçİĞÜŞÖÇıI\s]+$", RegexOptions.None))
+                // Using Unicode escape sequences for Turkish characters: ğ(\u011F), ü(\u00FC), ş(\u015F), ö(\u00F6), ç(\u00E7), ı(\u0131), İ(\u0130), Ğ(\u011E), Ü(\u00DC), Ş(\u015E), Ö(\u00D6), Ç(\u00C7)
+                if (!Regex.IsMatch(sanitizedName, @"^[a-zA-Z\u011F\u00FC\u015F\u00F6\u00E7\u0130\u011E\u00DC\u015E\u00D6\u00C7\u0131I\s]+$", RegexOptions.None))
                 {
                     return BadRequest(new { message = "Ad Soyad sadece harf içermelidir" });
                 }
@@ -424,7 +425,7 @@ namespace EduExcellence.WebApi.Controllers
     {
         [Required(ErrorMessage = "Ad Soyad zorunludur")]
         [StringLength(100, MinimumLength = 3, ErrorMessage = "Ad Soyad 3 ile 100 karakter arasında olmalıdır")]
-        [RegularExpression(@"^[a-zA-ZğüşöçİĞÜŞÖÇıI\s]+$", ErrorMessage = "Ad Soyad sadece harf içermelidir")]
+        [RegularExpression(@"^[a-zA-Z\u011F\u00FC\u015F\u00F6\u00E7\u0130\u011E\u00DC\u015E\u00D6\u00C7\u0131I\s]+$", ErrorMessage = "Ad Soyad sadece harf içermelidir")]
         public string Name { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "E-posta adresi zorunludur")]
