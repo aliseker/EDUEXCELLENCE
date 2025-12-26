@@ -66,7 +66,8 @@ export default function AdminHome() {
     const initial = (editingItem?.description as string) || '';
     setKa2DescriptionHtml(initial);
     if (ka2DescriptionEditor) {
-      ka2DescriptionEditor.commands.setContent(initial || '', false);
+      // Avoid extra update event on init
+      ka2DescriptionEditor.commands.setContent(initial || '', { emitUpdate: false });
     }
   }, [showModal, modalType, editingItem, ka2DescriptionEditor]);
 
@@ -2294,7 +2295,7 @@ export default function AdminHome() {
                         )}
                       </div>
 
-                      <p className="text-sm text-gray-900 mt-1 break-words whitespace-normal">
+                      <p className="text-sm text-gray-900 mt-1 break-words whitespace-normal line-clamp-2 overflow-hidden [overflow-wrap:anywhere]">
                         {stripHtml(course.description || '')}
                       </p>
 
@@ -2508,7 +2509,7 @@ export default function AdminHome() {
                   setSelectedImages([]);
                   setImagePreviews([]);
                   setKa2DescriptionHtml('');
-                  ka2DescriptionEditor?.commands.setContent('', false);
+              ka2DescriptionEditor?.commands.setContent('', { emitUpdate: false });
                   // Refresh data when modal is closed
                   fetchData();
                 }}
@@ -3118,7 +3119,7 @@ export default function AdminHome() {
                       setImagePreviews([]);
                       setFormKey(prev => prev + 1); // Form'u reset et
                       setKa2DescriptionHtml('');
-                      ka2DescriptionEditor?.commands.setContent('', false);
+                      ka2DescriptionEditor?.commands.setContent('', { emitUpdate: false });
                       // Refresh data when modal is closed
                       fetchData();
                     }}

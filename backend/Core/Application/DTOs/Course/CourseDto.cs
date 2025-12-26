@@ -30,7 +30,6 @@ namespace EduExcellence.Application.DTOs.Course
         public string Title { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Description is required.")]
-        [MaxLength(2000, ErrorMessage = "Description cannot exceed 2000 characters.")]
         public string Description { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Fee is required.")]

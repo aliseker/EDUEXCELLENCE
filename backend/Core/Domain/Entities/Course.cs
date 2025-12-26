@@ -9,7 +9,6 @@ namespace EduExcellence.Domain.Entities
         public string Title { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(2000)]
         public string Description { get; set; } = string.Empty;
 
         [Required]

@@ -27,7 +27,6 @@ namespace EduExcellence.Application.DTOs.Ka2
         public string Title { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Description is required.")]
-        [MaxLength(2000, ErrorMessage = "Description cannot exceed 2000 characters.")]
         public string Description { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Type is required.")]
@@ -43,7 +42,6 @@ namespace EduExcellence.Application.DTOs.Ka2
         public string PartnerCountries { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Objectives is required.")]
-        [MaxLength(1000, ErrorMessage = "Objectives cannot exceed 1000 characters.")]
         public string Objectives { get; set; } = string.Empty;
 
         public List<string> Activities { get; set; } = new();

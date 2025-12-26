@@ -48,7 +48,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Title).IsRequired().HasMaxLength(500);
-                entity.Property(e => e.Description).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.Description).IsRequired().HasColumnType("nvarchar(max)");
                 entity.Property(e => e.Fee).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Duration).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Location).IsRequired().HasMaxLength(100);
@@ -134,9 +134,9 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                 entity.Property(e => e.Location).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Coordinator).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.PartnerCountries).IsRequired().HasMaxLength(500);
-                entity.Property(e => e.Objectives).IsRequired().HasMaxLength(1000);
-                entity.Property(e => e.Activities).IsRequired().HasMaxLength(2000);
-                entity.Property(e => e.Results).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.Objectives).IsRequired().HasColumnType("nvarchar(max)");
+                entity.Property(e => e.Activities).IsRequired().HasColumnType("nvarchar(max)");
+                entity.Property(e => e.Results).IsRequired().HasColumnType("nvarchar(max)");
                 entity.Property(e => e.TargetGroup).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Budget).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.ImageUrl).HasColumnType("nvarchar(max)");
