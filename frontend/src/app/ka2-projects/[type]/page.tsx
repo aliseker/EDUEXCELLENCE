@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -35,6 +35,15 @@ export default function KA2ProjectPage() {
   const [projects, setProjects] = useState<Ka2Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentProjectIndex, setCurrentProjectIndex] = useState(0);
+
+  // DOMPurify only works in browser
+  const DOMPurify = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('dompurify');
+    }
+    return null;
+  }, []);
   
   // Current project based on index
   const currentProject = projects[currentProjectIndex];
@@ -253,12 +262,90 @@ export default function KA2ProjectPage() {
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
                 Project <span className={`text-transparent bg-clip-text bg-gradient-to-r ${config.color}`}>Overview</span>
               </h2>
-              <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                {project?.objectives || `The ${projectType.toUpperCase()} project focuses on enhancing education through innovative approaches, international collaboration, and best practice sharing. Our mission is to improve educational outcomes and foster cross-cultural understanding.`}
-              </p>
-              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                {project?.description || `By developing new methodologies, training educators, and creating accessible resources, we aim to empower learners and strengthen the education sector.`}
-              </p>
+              <div
+                className="prose prose-lg text-gray-700 leading-relaxed max-w-none mb-6 break-words overflow-wrap-anywhere overflow-hidden text-justify"
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify
+                    ? DOMPurify.sanitize(
+                        project?.objectives ||
+                          `The ${projectType.toUpperCase()} project focuses on enhancing education through innovative approaches, international collaboration, and best practice sharing. Our mission is to improve educational outcomes and foster cross-cultural understanding.`,
+                        {
+                          ALLOWED_TAGS: [
+                            'p',
+                            'br',
+                            'strong',
+                            'em',
+                            'u',
+                            'h1',
+                            'h2',
+                            'h3',
+                            'h4',
+                            'h5',
+                            'h6',
+                            'ul',
+                            'ol',
+                            'li',
+                            'a',
+                            'blockquote',
+                            'code',
+                            'pre',
+                            'span',
+                            'div',
+                          ],
+                          ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                          FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
+                          FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                        }
+                      )
+                    : (project?.objectives || '').replace(
+                        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+                        ''
+                      ),
+                }}
+              />
+              <div
+                className="prose prose-lg text-gray-700 leading-relaxed max-w-none mb-8 break-words overflow-wrap-anywhere overflow-hidden text-justify"
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify
+                    ? DOMPurify.sanitize(
+                        project?.description ||
+                          `By developing new methodologies, training educators, and creating accessible resources, we aim to empower learners and strengthen the education sector.`,
+                        {
+                          ALLOWED_TAGS: [
+                            'p',
+                            'br',
+                            'strong',
+                            'em',
+                            'u',
+                            'h1',
+                            'h2',
+                            'h3',
+                            'h4',
+                            'h5',
+                            'h6',
+                            'ul',
+                            'ol',
+                            'li',
+                            'a',
+                            'blockquote',
+                            'code',
+                            'pre',
+                            'span',
+                            'div',
+                          ],
+                          ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                          FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
+                          FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                        }
+                      )
+                    : (project?.description || '').replace(
+                        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+                        ''
+                      ),
+                }}
+              />
               
             </div>
             
@@ -272,7 +359,9 @@ export default function KA2ProjectPage() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Partners</h3>
-                  <p className="text-gray-600">{project?.partnerCountries || 'Multiple European Countries'}</p>
+                  <p className="text-gray-600 break-words overflow-wrap-anywhere">
+                    {project?.partnerCountries || 'Multiple European Countries'}
+                  </p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -282,7 +371,9 @@ export default function KA2ProjectPage() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Project Value</h3>
-                  <p className="text-gray-600">{project?.budget || '60.000 Euro'}</p>
+                  <p className="text-gray-600 break-words overflow-wrap-anywhere">
+                    {project?.budget || '60.000 Euro'}
+                  </p>
                 </div>
               </div>
 

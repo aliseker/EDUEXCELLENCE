@@ -1119,6 +1119,9 @@ export default function AdminHome() {
             if (response.ok) {
               const updatedProject = await response.json();
               setKa2Projects(ka2Projects.map(project => project.id === editingItem.id ? updatedProject : project));
+              toast.success('KA2 projesi başarıyla güncellendi!');
+              // Refresh data to ensure consistent shape/order
+              await fetchData();
             } else {
               const errorText = await response.text();
               console.error('KA2 update failed:', errorText);
@@ -1136,6 +1139,9 @@ export default function AdminHome() {
             if (response.ok) {
               const newProject = await response.json();
               setKa2Projects([...ka2Projects, newProject]);
+              toast.success('KA2 projesi başarıyla oluşturuldu!');
+              // Refresh data to ensure consistent shape/order
+              await fetchData();
             } else {
               const errorText = await response.text();
               console.error('KA2 create failed:', errorText);
@@ -2353,11 +2359,13 @@ export default function AdminHome() {
             <div className="p-6">
               <div className="space-y-6">
                 {ka2Projects.map((project) => (
-                  <div key={project.id} className="border border-gray-200 rounded-lg p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
+                  <div key={project.id} className="border border-gray-200 rounded-lg p-6 overflow-hidden">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-2 min-w-0">
+                          <h3 className="text-lg font-semibold text-gray-900 break-words min-w-0">
+                            {project.title}
+                          </h3>
                           <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                             project.type === 'KA210-VET' 
                               ? 'bg-green-100 text-green-800' 
@@ -2366,19 +2374,25 @@ export default function AdminHome() {
                             {project.type}
                           </span>
                         </div>
-                        <p className="text-gray-900 mb-3">{project.description}</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                          <div>
+                        <p className="text-gray-900 mb-3 text-sm leading-relaxed line-clamp-2 break-words overflow-wrap-anywhere overflow-hidden">
+                          {stripHtml(project.description || '')}
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm min-w-0">
+                          <div className="min-w-0">
                             <span className="font-semibold text-gray-800">Partners:</span>
-                            <span className="text-gray-900 ml-2 font-medium">{project.partners}</span>
+                            <span className="text-gray-900 ml-2 font-medium break-words [overflow-wrap:anywhere]">
+                              {project.partnerCountries || '-'}
+                            </span>
                           </div>
-                          <div>
+                          <div className="min-w-0">
                             <span className="font-semibold text-gray-800">Project Value:</span>
-                            <span className="text-gray-900 ml-2 font-medium">{project.projectValue}</span>
+                            <span className="text-gray-900 ml-2 font-medium break-words [overflow-wrap:anywhere]">
+                              {project.budget || '-'}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex space-x-2 ml-4">
+                      <div className="flex flex-wrap gap-2 lg:ml-4 flex-shrink-0 justify-start lg:justify-end">
                         <button
                           onClick={() => handleManageMeetings(project.id)}
                           className="px-3 py-2 text-sm font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200 flex items-center"
@@ -2943,13 +2957,85 @@ export default function AdminHome() {
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-900 mb-2">Açıklama</label>
-                      <textarea
-                        name="description"
-                        defaultValue={editingItem?.description || ''}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
-                        required
-                      />
+                      {/* Hidden input so existing FormData -> handleSave pipeline keeps working */}
+                      <input type="hidden" name="description" value={ka2DescriptionHtml} />
+
+                      <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                        <div className="flex flex-wrap gap-2 px-2 py-2 border-b border-gray-200 bg-gray-50">
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleBold().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('bold')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            Bold
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleItalic().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('italic')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            Italic
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleBulletList().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('bulletList')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            • List
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleOrderedList().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('orderedList')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            1. List
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleBlockquote().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('blockquote')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            Quote
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().setParagraph().run()}
+                            className="px-2 py-1 text-xs rounded border bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
+                          >
+                            Clear
+                          </button>
+                        </div>
+
+                        <div className="bg-white">
+                          {ka2DescriptionEditor ? (
+                            <EditorContent editor={ka2DescriptionEditor} />
+                          ) : (
+                            <div className="min-h-[140px] px-3 py-2 text-sm text-gray-500">
+                              Yükleniyor...
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-900 mb-2">Lokasyon</label>
