@@ -8,10 +8,12 @@ namespace EduExcellence.Application.Services
     public class BlogService : IBlogService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHtmlSanitizerService _sanitizer;
 
-        public BlogService(IUnitOfWork unitOfWork)
+        public BlogService(IUnitOfWork unitOfWork, IHtmlSanitizerService sanitizer)
         {
             _unitOfWork = unitOfWork;
+            _sanitizer = sanitizer;
         }
 
         public async Task<IEnumerable<BlogDto>> GetAllBlogsAsync()
@@ -46,13 +48,13 @@ namespace EduExcellence.Application.Services
             {
                 var blog = new Blog
                 {
-                    Title = dto.Title,
-                    Excerpt = dto.Excerpt,
-                    FullContent = dto.FullContent,
-                    Category = dto.Category ?? "General",
-                    Type = dto.Type,
-                    Author = dto.Author,
-                    ImageUrl = dto.ImageUrl,
+                    Title = _sanitizer.SanitizeToPlainText(dto.Title),
+                    Excerpt = _sanitizer.SanitizeToPlainText(dto.Excerpt),
+                    FullContent = _sanitizer.SanitizeRichText(dto.FullContent),
+                    Category = _sanitizer.SanitizeToPlainText(dto.Category ?? "General"),
+                    Type = _sanitizer.SanitizeToPlainText(dto.Type),
+                    Author = _sanitizer.SanitizeToPlainText(dto.Author),
+                    ImageUrl = _sanitizer.SanitizeToPlainText(dto.ImageUrl),
                     ReadTime = dto.ReadTime,
                     IsFeatured = dto.IsFeatured,
                     PublishedAt = dto.PublishedAt ?? DateTime.UtcNow
@@ -67,12 +69,13 @@ namespace EduExcellence.Application.Services
                     for (int i = 0; i < dto.Images.Count; i++)
                     {
                         // Skip empty or null image URLs
-                        if (!string.IsNullOrWhiteSpace(dto.Images[i]))
+                        var safeUrl = _sanitizer.SanitizeToPlainText(dto.Images[i]);
+                        if (!string.IsNullOrWhiteSpace(safeUrl))
                         {
                             var blogImage = new BlogImage
                             {
                                 BlogId = blog.Id,
-                                ImageUrl = dto.Images[i],
+                                ImageUrl = safeUrl,
                                 Order = i + 1
                             };
                             await _unitOfWork.BlogImages.AddAsync(blogImage);
@@ -105,13 +108,13 @@ namespace EduExcellence.Application.Services
                 if (blog == null)
                     throw new ArgumentException("Blog not found");
 
-                blog.Title = dto.Title;
-                blog.Excerpt = dto.Excerpt;
-                blog.FullContent = dto.FullContent;
-                blog.Category = dto.Category ?? "General";
-                blog.Type = dto.Type;
-                blog.Author = dto.Author;
-                blog.ImageUrl = dto.ImageUrl;
+                blog.Title = _sanitizer.SanitizeToPlainText(dto.Title);
+                blog.Excerpt = _sanitizer.SanitizeToPlainText(dto.Excerpt);
+                blog.FullContent = _sanitizer.SanitizeRichText(dto.FullContent);
+                blog.Category = _sanitizer.SanitizeToPlainText(dto.Category ?? "General");
+                blog.Type = _sanitizer.SanitizeToPlainText(dto.Type);
+                blog.Author = _sanitizer.SanitizeToPlainText(dto.Author);
+                blog.ImageUrl = _sanitizer.SanitizeToPlainText(dto.ImageUrl);
                 blog.ReadTime = dto.ReadTime;
                 blog.IsFeatured = dto.IsFeatured;
                 blog.PublishedAt = dto.PublishedAt ?? blog.PublishedAt;
@@ -131,12 +134,13 @@ namespace EduExcellence.Application.Services
                     for (int i = 0; i < dto.Images.Count; i++)
                     {
                         // Skip empty or null image URLs
-                        if (!string.IsNullOrWhiteSpace(dto.Images[i]))
+                        var safeUrl = _sanitizer.SanitizeToPlainText(dto.Images[i]);
+                        if (!string.IsNullOrWhiteSpace(safeUrl))
                         {
                             var blogImage = new BlogImage
                             {
                                 BlogId = blog.Id,
-                                ImageUrl = dto.Images[i],
+                                ImageUrl = safeUrl,
                                 Order = i + 1
                             };
                             await _unitOfWork.BlogImages.AddAsync(blogImage);

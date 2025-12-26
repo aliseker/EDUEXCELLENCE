@@ -44,7 +44,8 @@ function buildCsp(isProd: boolean) {
       : `connect-src 'self' ${apiDomains} ws://localhost:* wss://localhost:* ws://127.0.0.1:* wss://127.0.0.1:*`,
 
     // Embeds used in the app (Google Maps + YouTube).
-    "frame-src 'self' https://www.google.com https://www.youtube.com https://youtube.com",
+    // Use wildcards for Google subdomains used by Maps embeds (avoids production-only blocks).
+    "frame-src 'self' https://*.google.com https://*.youtube.com https://youtube.com",
 
     // Disallow mixed content in production
     ...(isProd ? ["upgrade-insecure-requests"] : []),

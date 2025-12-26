@@ -10,11 +10,13 @@ namespace EduExcellence.Application.Services
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<Ka2Service> _logger;
+        private readonly IHtmlSanitizerService _sanitizer;
 
-        public Ka2Service(IUnitOfWork unitOfWork, ILogger<Ka2Service> logger)
+        public Ka2Service(IUnitOfWork unitOfWork, ILogger<Ka2Service> logger, IHtmlSanitizerService sanitizer)
         {
             _unitOfWork = unitOfWork;
             _logger = logger;
+            _sanitizer = sanitizer;
         }
 
         public async Task<IEnumerable<Ka2ProjectDto>> GetAllProjectsAsync()
@@ -81,16 +83,20 @@ namespace EduExcellence.Application.Services
             {
                 var project = new Ka2Project
                 {
-                    Title = dto.Title,
-                    Description = dto.Description,
-                    Type = dto.Type,
-                    Location = dto.Location,
-                    PartnerCountries = dto.PartnerCountries,
-                    Objectives = dto.Objectives,
-                    Activities = string.Join("|", dto.Activities),
-                    Results = string.Join("|", dto.Results),
-                    TargetGroup = dto.TargetGroup,
-                    Budget = dto.Budget,
+                    Title = _sanitizer.SanitizeToPlainText(dto.Title),
+                    Description = _sanitizer.SanitizeRichText(dto.Description),
+                    Type = _sanitizer.SanitizeToPlainText(dto.Type),
+                    Location = _sanitizer.SanitizeToPlainText(dto.Location),
+                    PartnerCountries = _sanitizer.SanitizeToPlainText(dto.PartnerCountries),
+                    Objectives = _sanitizer.SanitizeRichText(dto.Objectives),
+                    Activities = string.Join("|", (dto.Activities ?? new List<string>())
+                        .Select(a => _sanitizer.SanitizeToPlainText(a))
+                        .Where(a => !string.IsNullOrWhiteSpace(a))),
+                    Results = string.Join("|", (dto.Results ?? new List<string>())
+                        .Select(r => _sanitizer.SanitizeToPlainText(r))
+                        .Where(r => !string.IsNullOrWhiteSpace(r))),
+                    TargetGroup = _sanitizer.SanitizeToPlainText(dto.TargetGroup),
+                    Budget = _sanitizer.SanitizeToPlainText(dto.Budget),
                     IsActive = dto.IsActive,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -117,16 +123,20 @@ namespace EduExcellence.Application.Services
                     throw new ArgumentException($"KA2 project with id {dto.Id} not found");
                 }
 
-                project.Title = dto.Title;
-                project.Description = dto.Description;
-                project.Type = dto.Type;
-                project.Location = dto.Location;
-                project.PartnerCountries = dto.PartnerCountries;
-                project.Objectives = dto.Objectives;
-                project.Activities = string.Join("|", dto.Activities);
-                project.Results = string.Join("|", dto.Results);
-                project.TargetGroup = dto.TargetGroup;
-                project.Budget = dto.Budget;
+                project.Title = _sanitizer.SanitizeToPlainText(dto.Title);
+                project.Description = _sanitizer.SanitizeRichText(dto.Description);
+                project.Type = _sanitizer.SanitizeToPlainText(dto.Type);
+                project.Location = _sanitizer.SanitizeToPlainText(dto.Location);
+                project.PartnerCountries = _sanitizer.SanitizeToPlainText(dto.PartnerCountries);
+                project.Objectives = _sanitizer.SanitizeRichText(dto.Objectives);
+                project.Activities = string.Join("|", (dto.Activities ?? new List<string>())
+                    .Select(a => _sanitizer.SanitizeToPlainText(a))
+                    .Where(a => !string.IsNullOrWhiteSpace(a)));
+                project.Results = string.Join("|", (dto.Results ?? new List<string>())
+                    .Select(r => _sanitizer.SanitizeToPlainText(r))
+                    .Where(r => !string.IsNullOrWhiteSpace(r)));
+                project.TargetGroup = _sanitizer.SanitizeToPlainText(dto.TargetGroup);
+                project.Budget = _sanitizer.SanitizeToPlainText(dto.Budget);
                 project.IsActive = dto.IsActive;
                 project.UpdatedAt = DateTime.UtcNow;
 

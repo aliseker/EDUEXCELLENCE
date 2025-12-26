@@ -7,10 +7,12 @@ namespace EduExcellence.Application.Services
     public class DisseminationService : IDisseminationService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHtmlSanitizerService _sanitizer;
 
-        public DisseminationService(IUnitOfWork unitOfWork)
+        public DisseminationService(IUnitOfWork unitOfWork, IHtmlSanitizerService sanitizer)
         {
             _unitOfWork = unitOfWork;
+            _sanitizer = sanitizer;
         }
 
         public async Task<IEnumerable<DisseminationDto>> GetDisseminationsByProjectIdAsync(int ka2ProjectId)
@@ -51,8 +53,8 @@ namespace EduExcellence.Application.Services
         {
             var dissemination = new Domain.Entities.Dissemination
             {
-                Title = createDisseminationDto.Title,
-                Description = createDisseminationDto.Description,
+                Title = _sanitizer.SanitizeToPlainText(createDisseminationDto.Title),
+                Description = _sanitizer.SanitizeToPlainText(createDisseminationDto.Description),
                 Images = createDisseminationDto.Images ?? new List<string>(),
                 Ka2ProjectId = createDisseminationDto.Ka2ProjectId,
                 CreatedAt = DateTime.UtcNow,
@@ -81,8 +83,8 @@ namespace EduExcellence.Application.Services
             if (dissemination == null)
                 throw new KeyNotFoundException($"Dissemination with ID {updateDisseminationDto.Id} not found");
 
-            dissemination.Title = updateDisseminationDto.Title;
-            dissemination.Description = updateDisseminationDto.Description;
+            dissemination.Title = _sanitizer.SanitizeToPlainText(updateDisseminationDto.Title);
+            dissemination.Description = _sanitizer.SanitizeToPlainText(updateDisseminationDto.Description);
             dissemination.Images = updateDisseminationDto.Images ?? new List<string>();
             dissemination.UpdatedAt = DateTime.UtcNow;
 

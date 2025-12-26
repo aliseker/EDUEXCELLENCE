@@ -8,10 +8,12 @@ namespace EduExcellence.Application.Services
     public class CourseService : ICourseService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHtmlSanitizerService _sanitizer;
 
-        public CourseService(IUnitOfWork unitOfWork)
+        public CourseService(IUnitOfWork unitOfWork, IHtmlSanitizerService sanitizer)
         {
             _unitOfWork = unitOfWork;
+            _sanitizer = sanitizer;
         }
 
         public async Task<IEnumerable<CourseDto>> GetAllCoursesAsync()
@@ -53,45 +55,53 @@ namespace EduExcellence.Application.Services
         {
             var course = new Course
             {
-                Title = dto.Title,
-                Description = dto.Description,
-                Fee = dto.Fee,
-                Duration = dto.Duration,
+                Title = _sanitizer.SanitizeToPlainText(dto.Title),
+                Description = _sanitizer.SanitizeRichText(dto.Description),
+                Fee = _sanitizer.SanitizeToPlainText(dto.Fee),
+                Duration = _sanitizer.SanitizeToPlainText(dto.Duration),
                 StartDate = dto.StartDate,
                 EndDate = dto.EndDate,
-                Location = NormalizeLocation(dto.Location),
-                Level = dto.Level,
+                Location = NormalizeLocation(_sanitizer.SanitizeToPlainText(dto.Location)),
+                Level = _sanitizer.SanitizeToPlainText(dto.Level),
                 MaxParticipants = dto.MaxParticipants,
                 CurrentParticipants = dto.CurrentParticipants,
                 IsApproved = dto.IsApproved,
-                ImageUrl = dto.ImageUrl
+                ImageUrl = _sanitizer.SanitizeToPlainText(dto.ImageUrl)
             };
 
             await _unitOfWork.Courses.AddAsync(course);
             await _unitOfWork.SaveChangesAsync();
 
             // Add learning outcomes
-            foreach (var outcome in dto.LearningOutcomes)
+            foreach (var outcome in dto.LearningOutcomes ?? new List<string>())
             {
+                var safeOutcome = _sanitizer.SanitizeToPlainText(outcome);
+                if (string.IsNullOrWhiteSpace(safeOutcome)) continue;
                 var learningOutcome = new CourseLearningOutcome
                 {
                     CourseId = course.Id,
-                    Outcome = outcome,
-                    Order = dto.LearningOutcomes.IndexOf(outcome) + 1
+                    Outcome = safeOutcome,
+                    Order = (dto.LearningOutcomes?.IndexOf(outcome) ?? 0) + 1
                 };
                 await _unitOfWork.CourseLearningOutcomes.AddAsync(learningOutcome);
             }
 
             // Add daily programs
-            foreach (var program in dto.DailyPrograms)
+            if (dto.DailyPrograms != null && dto.DailyPrograms.Count > 0)
             {
-                var dailyProgram = new CourseDailyProgram
+                for (var i = 0; i < dto.DailyPrograms.Count; i++)
                 {
-                    CourseId = course.Id,
-                    Day = dto.DailyPrograms.IndexOf(program) + 1,
-                    Program = program
-                };
-                await _unitOfWork.CourseDailyPrograms.AddAsync(dailyProgram);
+                    var safeProgram = _sanitizer.SanitizeToPlainText(dto.DailyPrograms[i]);
+                    if (string.IsNullOrWhiteSpace(safeProgram)) continue;
+
+                    var dailyProgram = new CourseDailyProgram
+                    {
+                        CourseId = course.Id,
+                        Day = i + 1,
+                        Program = safeProgram
+                    };
+                    await _unitOfWork.CourseDailyPrograms.AddAsync(dailyProgram);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -104,18 +114,18 @@ namespace EduExcellence.Application.Services
             if (course == null)
                 throw new ArgumentException("Course not found");
 
-            course.Title = dto.Title;
-            course.Description = dto.Description;
-            course.Fee = dto.Fee;
-            course.Duration = dto.Duration;
+            course.Title = _sanitizer.SanitizeToPlainText(dto.Title);
+            course.Description = _sanitizer.SanitizeRichText(dto.Description);
+            course.Fee = _sanitizer.SanitizeToPlainText(dto.Fee);
+            course.Duration = _sanitizer.SanitizeToPlainText(dto.Duration);
             course.StartDate = dto.StartDate;
             course.EndDate = dto.EndDate;
-            course.Location = NormalizeLocation(dto.Location);
-            course.Level = dto.Level;
+            course.Location = NormalizeLocation(_sanitizer.SanitizeToPlainText(dto.Location));
+            course.Level = _sanitizer.SanitizeToPlainText(dto.Level);
             course.MaxParticipants = dto.MaxParticipants;
             course.CurrentParticipants = dto.CurrentParticipants;
             course.IsApproved = dto.IsApproved;
-            course.ImageUrl = dto.ImageUrl;
+            course.ImageUrl = _sanitizer.SanitizeToPlainText(dto.ImageUrl);
 
             await _unitOfWork.Courses.UpdateAsync(course);
 
@@ -126,13 +136,15 @@ namespace EduExcellence.Application.Services
                 await _unitOfWork.CourseLearningOutcomes.DeleteAsync(existing.Id);
             }
 
-            foreach (var outcome in dto.LearningOutcomes)
+            foreach (var outcome in dto.LearningOutcomes ?? new List<string>())
             {
+                var safeOutcome = _sanitizer.SanitizeToPlainText(outcome);
+                if (string.IsNullOrWhiteSpace(safeOutcome)) continue;
                 var learningOutcome = new CourseLearningOutcome
                 {
                     CourseId = course.Id,
-                    Outcome = outcome,
-                    Order = dto.LearningOutcomes.IndexOf(outcome) + 1
+                    Outcome = safeOutcome,
+                    Order = (dto.LearningOutcomes?.IndexOf(outcome) ?? 0) + 1
                 };
                 await _unitOfWork.CourseLearningOutcomes.AddAsync(learningOutcome);
             }
@@ -144,16 +156,22 @@ namespace EduExcellence.Application.Services
                 await _unitOfWork.CourseDailyPrograms.DeleteAsync(existing.Id);
             }
 
-            foreach (var program in dto.DailyPrograms)
+            if (dto.DailyPrograms != null && dto.DailyPrograms.Count > 0)
             {
-                var dailyProgram = new CourseDailyProgram
+                for (var i = 0; i < dto.DailyPrograms.Count; i++)
                 {
-                    CourseId = course.Id,
-                    Day = dto.DailyPrograms.IndexOf(program) + 1,
-                    Program = program
-                };
-                await _unitOfWork.CourseDailyPrograms.AddAsync(dailyProgram);
-                Console.WriteLine($"Added daily program: Day {dailyProgram.Day}, Program: {dailyProgram.Program}");
+                    var safeProgram = _sanitizer.SanitizeToPlainText(dto.DailyPrograms[i]);
+                    if (string.IsNullOrWhiteSpace(safeProgram)) continue;
+
+                    var dailyProgram = new CourseDailyProgram
+                    {
+                        CourseId = course.Id,
+                        Day = i + 1,
+                        Program = safeProgram
+                    };
+                    await _unitOfWork.CourseDailyPrograms.AddAsync(dailyProgram);
+                    Console.WriteLine($"Added daily program: Day {dailyProgram.Day}, Program: {dailyProgram.Program}");
+                }
             }
 
             await _unitOfWork.SaveChangesAsync();

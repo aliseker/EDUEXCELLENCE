@@ -123,6 +123,7 @@ namespace EduExcellence.WebApi
 
             // Register services
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddSingleton<IHtmlSanitizerService, HtmlSanitizerService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<ICourseService, CourseService>();
             builder.Services.AddScoped<IBlogService, BlogService>();

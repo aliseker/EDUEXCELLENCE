@@ -7,10 +7,12 @@ namespace EduExcellence.Application.Services
     public class MeetingService : IMeetingService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IHtmlSanitizerService _sanitizer;
 
-        public MeetingService(IUnitOfWork unitOfWork)
+        public MeetingService(IUnitOfWork unitOfWork, IHtmlSanitizerService sanitizer)
         {
             _unitOfWork = unitOfWork;
+            _sanitizer = sanitizer;
         }
 
         public async Task<IEnumerable<MeetingDto>> GetMeetingsByProjectIdAsync(int ka2ProjectId)
@@ -51,8 +53,8 @@ namespace EduExcellence.Application.Services
         {
             var meeting = new Domain.Entities.Meeting
             {
-                Title = createMeetingDto.Title,
-                Description = createMeetingDto.Description,
+                Title = _sanitizer.SanitizeToPlainText(createMeetingDto.Title),
+                Description = _sanitizer.SanitizeToPlainText(createMeetingDto.Description),
                 Images = createMeetingDto.Images ?? new List<string>(),
                 Ka2ProjectId = createMeetingDto.Ka2ProjectId,
                 CreatedAt = DateTime.UtcNow,
@@ -81,8 +83,8 @@ namespace EduExcellence.Application.Services
             if (meeting == null)
                 throw new KeyNotFoundException($"Meeting with ID {updateMeetingDto.Id} not found");
 
-            meeting.Title = updateMeetingDto.Title;
-            meeting.Description = updateMeetingDto.Description;
+            meeting.Title = _sanitizer.SanitizeToPlainText(updateMeetingDto.Title);
+            meeting.Description = _sanitizer.SanitizeToPlainText(updateMeetingDto.Description);
             meeting.Images = updateMeetingDto.Images ?? new List<string>();
             meeting.UpdatedAt = DateTime.UtcNow;
 
