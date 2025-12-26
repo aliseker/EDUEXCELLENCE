@@ -38,6 +38,14 @@ const CourseCard = ({
   dailyProgram,
   imageUrl
 }: CourseCardProps) => {
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
   return (
     <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden border border-gray-200 flex flex-col h-full">
       {/* Course Cover Image */}
@@ -92,8 +100,8 @@ const CourseCard = ({
 
       {/* Course Content */}
       <div className="p-4 flex flex-col flex-grow">
-        <p className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-3">
-          {description}
+        <p className="text-gray-600 mb-4 text-sm leading-relaxed line-clamp-3 break-words overflow-wrap-anywhere overflow-hidden">
+          {stripHtml(description || '')}
         </p>
 
         {/* Course Info */}

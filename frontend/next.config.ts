@@ -1,11 +1,67 @@
 import type { NextConfig } from "next";
 
-const nextConfig = {
+function buildCsp(isProd: boolean) {
+  // Keep CSP intentionally compatible with Next.js without nonce plumbing.
+  // Tighten later by introducing nonces/hashes for inline scripts.
+
+  const siteDomains = isProd
+    ? "https://edu-excellence.net https://www.edu-excellence.net"
+    : "'self' http://localhost:3000 https://localhost:3000";
+
+  // `frontend/src/config/api.ts` is currently hardcoded to https://localhost:7166
+  // so dev CSP must allow it for fetch + image URLs.
+  const apiDomains = isProd
+    ? "https://edu-excellence.net https://www.edu-excellence.net"
+    : "https://localhost:7166 http://localhost:7166";
+
+  const imageDomains = isProd
+    ? `${siteDomains} https://images.unsplash.com https://via.placeholder.com https://picsum.photos`
+    : `${siteDomains} ${apiDomains} https://images.unsplash.com https://via.placeholder.com https://picsum.photos`;
+
+  const directives: string[] = [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+
+    // Next.js needs inline scripts/styles unless you implement nonces.
+    // Dev needs 'unsafe-eval' for tooling (HMR/source maps).
+    isProd
+      ? `script-src 'self' 'unsafe-inline' ${siteDomains}`
+      : `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${siteDomains}`,
+
+    // Allow Google Fonts (if used).
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+
+    // Images: whitelist only trusted domains
+    `img-src 'self' data: blob: ${imageDomains}`,
+    "font-src 'self' data: https://fonts.gstatic.com",
+
+    // API calls: whitelist approach
+    isProd
+      ? `connect-src 'self' ${apiDomains}`
+      : `connect-src 'self' ${apiDomains} ws://localhost:* wss://localhost:* ws://127.0.0.1:* wss://127.0.0.1:*`,
+
+    // Embeds used in the app (Google Maps + YouTube).
+    "frame-src 'self' https://www.google.com https://www.youtube.com https://youtube.com",
+
+    // Disallow mixed content in production
+    ...(isProd ? ["upgrade-insecure-requests"] : []),
+  ];
+
+  return directives.join("; ");
+}
+
+const nextConfig: NextConfig = {
   // Performance optimizations
   reactStrictMode: true,
   
   // Security headers
   async headers() {
+    const isProd = process.env.NODE_ENV === "production";
+    const csp = buildCsp(isProd);
+
     return [
       {
         source: '/:path*',
@@ -14,10 +70,14 @@ const nextConfig = {
             key: 'X-DNS-Prefetch-Control',
             value: 'on'
           },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload'
-          },
+          ...(isProd
+            ? [
+                {
+                  key: "Strict-Transport-Security",
+                  value: "max-age=31536000; includeSubDomains; preload",
+                },
+              ]
+            : []),
           {
             key: 'X-Frame-Options',
             value: 'DENY'
@@ -32,7 +92,7 @@ const nextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin'
+            value: 'strict-origin-when-cross-origin'
           },
           {
             key: 'Permissions-Policy',
@@ -40,19 +100,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' https://edu-excellence.net",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "img-src 'self' data: https: blob:",
-              "font-src 'self' https://fonts.gstatic.com data:",
-              "connect-src 'self' https://edu-excellence.net",
-              "frame-ancestors 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "object-src 'none'",
-              "upgrade-insecure-requests"
-            ].join('; ')
+            value: csp
           }
         ],
       },
@@ -61,9 +109,10 @@ const nextConfig = {
   
   // Optimize production builds - Remove all console logs for security
   compiler: {
-    removeConsole: {
-      exclude: ['error'], // Keep only console.error for critical errors
-    },
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
   },
   
   // eslint config kaldırıldı - Next.js 16.0.10'da artık desteklenmiyor
@@ -78,44 +127,50 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'localhost',
-        port: '7166',
-        pathname: '/uploads/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'edu-excellence.net',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'www.edu-excellence.net',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
-    ],
+    remotePatterns: (() => {
+      const isProd = process.env.NODE_ENV === "production";
+
+      const base = [
+        {
+          protocol: "https" as const,
+          hostname: "edu-excellence.net",
+          pathname: "/**",
+        },
+        {
+          protocol: "https" as const,
+          hostname: "www.edu-excellence.net",
+          pathname: "/**",
+        },
+        {
+          protocol: "https" as const,
+          hostname: "images.unsplash.com",
+          pathname: "/**",
+        },
+        {
+          protocol: "https" as const,
+          hostname: "via.placeholder.com",
+          pathname: "/**",
+        },
+        {
+          protocol: "https" as const,
+          hostname: "picsum.photos",
+          pathname: "/**",
+        },
+      ];
+
+      if (isProd) return base;
+
+      // Development: allow backend-hosted uploads (api.ts uses https://localhost:7166)
+      return [
+        {
+          protocol: "https" as const,
+          hostname: "localhost",
+          port: "7166",
+          pathname: "/uploads/**",
+        },
+        ...base,
+      ];
+    })(),
   },
 };
 

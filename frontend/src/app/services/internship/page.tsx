@@ -1,6 +1,5 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import Image from 'next/image';
 import Link from 'next/link';
 
 export default function InternshipPage() {
@@ -42,15 +41,18 @@ export default function InternshipPage() {
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">
                   Internship <span className="text-blue-600">Arrangements</span>
                 </h2>
-                <p className="text-lg text-gray-600 leading-relaxed">
+                <p className="text-lg text-gray-600 leading-relaxed text-justify">
                   At Edu-Excellence, we connect students and young professionals with reliable companies and quality working environments in Germany and Türkiye. We specialize in arranging meaningful internships that match participants' skills and learning goals, ensuring they gain valuable hands-on experience in a supportive, real-world setting.
                 </p>
               </div>
 
               <div className="pt-4">
-                <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105"
+                >
                   Get Started
-                </button>
+                </Link>
               </div>
             </div>
 

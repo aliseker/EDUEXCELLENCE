@@ -40,8 +40,16 @@ const ReviewsSection = () => {
       if (response.ok) {
         const data = await response.json();
         
-        // Tüm verileri göster (filtreleme yok)
-        setReviews(data.slice(0, 3)); // En fazla 3 tane göster
+        // Homepage: only show text reviews (exclude video testimonials)
+        const textReviews = (Array.isArray(data) ? data : []).filter((item: Review) => {
+          const hasVideoUrl =
+            typeof item.videoUrl === 'string' && item.videoUrl.trim().length > 0;
+          const isVideoType =
+            typeof item.type === 'string' && item.type.toLowerCase() === 'video';
+          return !hasVideoUrl && !isVideoType;
+        });
+
+        setReviews(textReviews.slice(0, 3)); // En fazla 3 tane göster
       } else {
         console.error('API response not ok:', response.status, response.statusText);
         const errorText = await response.text();
@@ -159,12 +167,27 @@ const ReviewsSection = () => {
               
               {/* Program Tag and Date */}
               <div className="flex items-center justify-between">
-                <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-                  {review.title}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {formatDate(review.createdAt)}
-                </div>
+                {(() => {
+                  const positionLabel =
+                    (typeof review.position === 'string' && review.position.trim()) ||
+                    (typeof review.company === 'string' && review.company.trim()) ||
+                    '';
+
+                  return (
+                    <>
+                      {positionLabel ? (
+                        <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+                          {positionLabel}
+                        </div>
+                      ) : (
+                        <div />
+                      )}
+                      <div className="text-sm text-gray-500">
+                        {formatDate(review.createdAt)}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           ))}

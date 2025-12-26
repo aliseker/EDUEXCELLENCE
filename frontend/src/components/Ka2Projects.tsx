@@ -32,6 +32,14 @@ const Ka2Projects = () => {
   const [projects, setProjects] = useState<Ka2Project[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -108,7 +116,7 @@ const Ka2Projects = () => {
                   </h3>
                   
                   <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {project.description}
+                    {stripHtml(project.description || '')}
                   </p>
                   
                   <div className="space-y-2 mb-4">

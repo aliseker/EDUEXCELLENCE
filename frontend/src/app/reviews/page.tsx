@@ -264,9 +264,20 @@ export default function ReviewsPage() {
                   {/* Program Info */}
                   <div className="border-t border-gray-100 pt-4">
                     <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
-                        {review.title}
-                      </span>
+                      {(() => {
+                        const positionLabel =
+                          (typeof review.position === 'string' && review.position.trim()) ||
+                          (typeof review.company === 'string' && review.company.trim()) ||
+                          '';
+
+                        return positionLabel ? (
+                          <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+                            {positionLabel}
+                          </span>
+                        ) : (
+                          <span />
+                        );
+                      })()}
                       <span>{formatDate(review.createdAt)}</span>
                     </div>
                   </div>

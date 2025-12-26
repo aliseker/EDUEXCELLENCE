@@ -221,7 +221,7 @@ const Navbar = () => {
                   
                   {/* Dropdown Menu */}
                   {item.dropdown && activeDropdown === item.title && (
-                    <div className="absolute left-[-20px] mt-2 w-[560px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 py-6 z-[9999]">
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[560px] max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 py-6 z-[9999]">
                       <div className="grid grid-cols-2 gap-4 px-6">
                         {item.dropdown.map((dropdownItem) => (
                           <Link

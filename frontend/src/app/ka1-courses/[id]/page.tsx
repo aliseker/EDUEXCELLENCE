@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -38,6 +38,15 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [contacts, setContacts] = useState<Contact[]>([]);
+
+  // DOMPurify only works in browser
+  const DOMPurify = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('dompurify');
+    }
+    return null;
+  }, []);
 
   // Fetch course from API
   useEffect(() => {
@@ -288,9 +297,44 @@ export default function CourseDetailPage() {
           {/* Course Description */}
           <div className="mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Course Description</h2>
-            <div className="prose prose-lg text-gray-700 leading-relaxed">
-              <p className="font-medium">{course.description}</p>
-            </div>
+            <div
+              className="prose prose-lg text-gray-700 leading-relaxed max-w-none break-words overflow-wrap-anywhere overflow-hidden"
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify
+                  ? DOMPurify.sanitize(course.description || '', {
+                      ALLOWED_TAGS: [
+                        'p',
+                        'br',
+                        'strong',
+                        'em',
+                        'u',
+                        'h1',
+                        'h2',
+                        'h3',
+                        'h4',
+                        'h5',
+                        'h6',
+                        'ul',
+                        'ol',
+                        'li',
+                        'a',
+                        'blockquote',
+                        'code',
+                        'pre',
+                        'span',
+                        'div',
+                      ],
+                      ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                      FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
+                      FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                    })
+                  : (course.description || '').replace(
+                      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+                      ''
+                    ),
+              }}
+            />
           </div>
 
           {/* Daily Programme */}
@@ -309,7 +353,7 @@ export default function CourseDetailPage() {
                           Day {index + 1}
                         </div>
                       </div>
-                      <p className="text-gray-700 font-medium">{day}</p>
+                      <p className="text-gray-700 font-medium break-words overflow-wrap-anywhere">{day}</p>
                     </div>
                   );
                 })}

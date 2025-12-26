@@ -1,7 +1,6 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
-import Image from 'next/image';
 
 export default function JobShadowingPage() {
   return (
@@ -42,21 +41,24 @@ export default function JobShadowingPage() {
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">
                   Job Shadowing <span className="text-green-600">Services</span>
                 </h2>
-                <p className="text-lg text-gray-600 leading-relaxed">
+                <p className="text-lg text-gray-600 leading-relaxed text-justify">
                   At <strong>Edu-Excellence</strong>, we offer tailored <strong>Job Shadowing Services</strong> for participants seeking real-life observation experiences in line with their professional interests, project themes, or Erasmus+ priorities.
                 </p>
-                <p className="text-lg text-gray-600 leading-relaxed">
+                <p className="text-lg text-gray-600 leading-relaxed text-justify">
                   We connect participants with carefully selected organizations — including schools, VET centers, adult education providers, public bodies, NGOs, and companies — where they can observe day-to-day operations, engage with experts, and gain practical insights relevant to their fields of interest.
                 </p>
-                <p className="text-lg text-gray-600 leading-relaxed">
+                <p className="text-lg text-gray-600 leading-relaxed text-justify">
                   Our job shadowing arrangements are designed to meet the educational goals of Erasmus+ projects, ensuring participants explore good practices, innovative methods, and European priorities such as inclusion, digital transformation, and environmental sustainability.
                 </p>
               </div>
 
               <div className="pt-4">
-                <button className="bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 transform hover:scale-105">
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center justify-center bg-gradient-to-r from-green-600 to-blue-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
+                >
                   Get Started
-                </button>
+                </Link>
               </div>
             </div>
 

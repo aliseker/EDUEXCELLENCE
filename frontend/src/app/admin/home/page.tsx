@@ -1,9 +1,11 @@
 'use client';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { authenticatedFetch } from '@/utils/authenticatedFetch';
 import { API_BASE_URL, BACKEND_BASE_URL } from '@/config/api';
 
@@ -22,7 +24,51 @@ export default function AdminHome() {
   const [isContactSaving, setIsContactSaving] = useState(false);
   const [formKey, setFormKey] = useState(0); // Form reset için
   const [adminData, setAdminData] = useState<any>(null); // Admin bilgileri için
+  const [ka2DescriptionHtml, setKa2DescriptionHtml] = useState<string>('');
   const router = useRouter();
+
+  // DOMPurify only works in browser (consistent with other pages)
+  const DOMPurify = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      return require('dompurify');
+    }
+    return null;
+  }, []);
+
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  const ka2DescriptionEditor = useEditor({
+    // Fix SSR/hydration warning in Next.js (Tiptap recommendation)
+    immediatelyRender: false,
+    extensions: [StarterKit],
+    content: '',
+    editorProps: {
+      attributes: {
+        class:
+          'min-h-[140px] w-full px-3 py-2 outline-none text-black leading-relaxed',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      setKa2DescriptionHtml(editor.getHTML());
+    },
+  });
+
+  // Keep editor content in sync when opening/closing rich-text modals or editing existing item
+  useEffect(() => {
+    if (!showModal || (modalType !== 'ka2project' && modalType !== 'ka1course')) return;
+    const initial = (editingItem?.description as string) || '';
+    setKa2DescriptionHtml(initial);
+    if (ka2DescriptionEditor) {
+      ka2DescriptionEditor.commands.setContent(initial || '', false);
+    }
+  }, [showModal, modalType, editingItem, ka2DescriptionEditor]);
 
   // Helper function to handle date conversion without timezone issues
   const formatDateForInput = (dateString: string) => {
@@ -899,6 +945,35 @@ export default function AdminHome() {
           break;
 
         case 'ka1course':
+          // Sanitize rich text HTML coming from Tiptap
+          const sanitizedCourseDescription =
+            DOMPurify && typeof data.description === 'string'
+              ? DOMPurify.sanitize(data.description, {
+                  ALLOWED_TAGS: [
+                    'p',
+                    'br',
+                    'strong',
+                    'em',
+                    'u',
+                    'h1',
+                    'h2',
+                    'h3',
+                    'ul',
+                    'ol',
+                    'li',
+                    'a',
+                    'blockquote',
+                    'code',
+                    'pre',
+                    'span',
+                    'div',
+                  ],
+                  ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
+                  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                })
+              : (typeof data.description === 'string' ? data.description : '');
+
           // Collect daily program data from dynamic fields
           const dailyProgramData: string[] = [];
           const form = e?.target as HTMLFormElement;
@@ -911,7 +986,7 @@ export default function AdminHome() {
 
           const courseData = {
             title: data.title,
-            description: data.description,
+            description: sanitizedCourseDescription,
             fee: data.fee,
             duration: `${data.duration} DAYS`,
             startDate: data.startDate ? new Date(data.startDate + 'T00:00:00').toISOString() : null,
@@ -989,9 +1064,38 @@ export default function AdminHome() {
           }
           break;
         case 'ka2project':
+          // Sanitize rich text HTML coming from Tiptap
+          const sanitizedDescription =
+            DOMPurify && typeof data.description === 'string'
+              ? DOMPurify.sanitize(data.description, {
+                  ALLOWED_TAGS: [
+                    'p',
+                    'br',
+                    'strong',
+                    'em',
+                    'u',
+                    'h1',
+                    'h2',
+                    'h3',
+                    'ul',
+                    'ol',
+                    'li',
+                    'a',
+                    'blockquote',
+                    'code',
+                    'pre',
+                    'span',
+                    'div',
+                  ],
+                  ALLOWED_ATTR: ['href', 'title', 'target', 'rel'],
+                  FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'style'],
+                  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                })
+              : (typeof data.description === 'string' ? data.description : '');
+
           const projectData = {
             title: data.title,
-            description: data.description,
+            description: sanitizedDescription,
             type: data.type,
             location: data.location,
             partnerCountries: data.partners,
@@ -2168,18 +2272,27 @@ export default function AdminHome() {
             <div className="p-6">
               <div className="space-y-4">
                 {ka1Courses.map((course) => (
-                  <div key={course.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="font-medium text-gray-900">{course.title}</h3>
+                  <div
+                    key={course.id}
+                    className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 p-4 border border-gray-200 rounded-lg"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="font-medium text-gray-900 break-words min-w-0">
+                          {course.title}
+                        </h3>
                         {course.isApproved && (
                           <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
                             Onaylı
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-900 mt-1">{course.description}</p>
-                      <div className="flex items-center mt-2 space-x-4">
+
+                      <p className="text-sm text-gray-900 mt-1 break-words whitespace-normal">
+                        {stripHtml(course.description || '')}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
                         <span className="text-sm text-gray-900 font-medium">📍 {course.location}</span>
                         <span className="text-sm text-gray-900 font-medium">⏱️ {course.duration}</span>
                         <span className="text-sm text-gray-900 font-medium">💰 {course.fee}</span>
@@ -2194,10 +2307,12 @@ export default function AdminHome() {
                         )}
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+
+                    <div className="flex flex-wrap gap-2 md:flex-col md:items-end flex-shrink-0">
                       <button
                         onClick={() => handleEdit('ka1course', course)}
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                        title="Düzenle"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -2206,6 +2321,7 @@ export default function AdminHome() {
                       <button
                         onClick={() => handleDelete('ka1course', course.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        title="Sil"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -2377,6 +2493,8 @@ export default function AdminHome() {
                   setEditingItem(null);
                   setSelectedImages([]);
                   setImagePreviews([]);
+                  setKa2DescriptionHtml('');
+                  ka2DescriptionEditor?.commands.setContent('', false);
                   // Refresh data when modal is closed
                   fetchData();
                 }}
@@ -2390,6 +2508,13 @@ export default function AdminHome() {
             <div className="p-6">
               <form key={formKey} onSubmit={(e) => {
                 e.preventDefault();
+                if (modalType === 'ka2project' || modalType === 'ka1course') {
+                  const text = ka2DescriptionEditor?.getText()?.trim() || '';
+                  if (!text) {
+                    toast.error('Açıklama alanı boş olamaz!');
+                    return;
+                  }
+                }
                 const formData = new FormData(e.target as HTMLFormElement);
                 const data = Object.fromEntries(formData.entries());
                 handleSave(modalType, data, e);
@@ -2562,13 +2687,85 @@ export default function AdminHome() {
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-900 mb-2">Açıklama</label>
-                      <textarea
-                        name="description"
-                        defaultValue={editingItem?.description || ''}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-600 text-black"
-                        required
-                      />
+                      {/* Hidden input so existing FormData -> handleSave pipeline keeps working */}
+                      <input type="hidden" name="description" value={ka2DescriptionHtml} />
+
+                      <div className="border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent">
+                        <div className="flex flex-wrap gap-2 px-2 py-2 border-b border-gray-200 bg-gray-50">
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleBold().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('bold')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            Bold
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleItalic().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('italic')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            Italic
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleBulletList().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('bulletList')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            • List
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleOrderedList().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('orderedList')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            1. List
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().toggleBlockquote().run()}
+                            className={`px-2 py-1 text-xs rounded border ${
+                              ka2DescriptionEditor?.isActive('blockquote')
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            Quote
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => ka2DescriptionEditor?.chain().focus().setParagraph().run()}
+                            className="px-2 py-1 text-xs rounded border bg-white text-gray-800 border-gray-300 hover:bg-gray-100"
+                          >
+                            Clear
+                          </button>
+                        </div>
+
+                        <div className="bg-white">
+                          {ka2DescriptionEditor ? (
+                            <EditorContent editor={ka2DescriptionEditor} />
+                          ) : (
+                            <div className="min-h-[140px] px-3 py-2 text-sm text-gray-500">
+                              Yükleniyor...
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                     <div className="mb-4">
                       <label className="block text-sm font-medium text-gray-900 mb-2">Seviye</label>
@@ -2834,6 +3031,8 @@ export default function AdminHome() {
                       setSelectedImages([]);
                       setImagePreviews([]);
                       setFormKey(prev => prev + 1); // Form'u reset et
+                      setKa2DescriptionHtml('');
+                      ka2DescriptionEditor?.commands.setContent('', false);
                       // Refresh data when modal is closed
                       fetchData();
                     }}

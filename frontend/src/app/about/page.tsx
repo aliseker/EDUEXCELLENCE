@@ -42,20 +42,20 @@ export default function AboutPage() {
                 <h2 className="text-4xl font-bold text-gray-900 mb-6">
                   About <span className="text-blue-600">Edu Excellence</span>
                 </h2>
-                <p className="text-lg text-gray-600 leading-relaxed">
+                <p className="text-lg text-gray-600 leading-relaxed text-justify">
                   <strong className="text-gray-900">Edu Excellence</strong> is a leading SME in international project activities, 
                   teacher training, EU-funded projects, and comprehensive educational services. With over 15 years of 
                   proven experience, we are committed to delivering excellence through our disciplined working system 
                   and unwavering dedication to quality.
                 </p>
                 
-                <p className="text-lg text-gray-600 leading-relaxed">
+                <p className="text-lg text-gray-600 leading-relaxed text-justify">
                   Operating across multiple international locations including <strong className="text-gray-900">Antalya, Istanbul, 
                   Düsseldorf, Dortmund, Granada, Paris, and Mykonos</strong>, we serve as your trusted partner in 
                   Erasmus+ Program KA2 Cooperation Partnerships.
                 </p>
                 
-                <p className="text-lg text-gray-600 leading-relaxed">
+                <p className="text-lg text-gray-600 leading-relaxed text-justify">
                   Our comprehensive support includes project writing, partnership establishment, implementation, 
                   and report preparation. We also provide <strong className="text-gray-900">KA1 courses for teacher development</strong> 
                   with full support for accommodation, transportation, and cultural activities.
@@ -145,15 +145,15 @@ export default function AboutPage() {
                 : "#";
               
               return (
-                <Link key={index} href={href} className="block">
-                  <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer">
+                <Link key={index} href={href} className="block h-full">
+                  <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer h-full flex flex-col">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white mb-6 group-hover:scale-110 transition-transform duration-300">
                       {service.icon}
                     </div>
                     <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors duration-300">
                       {service.title}
                     </h3>
-                    <p className="text-gray-600 leading-relaxed">
+                    <p className="text-gray-600 leading-relaxed flex-1">
                       {service.description}
                     </p>
                   </div>

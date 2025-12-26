@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 
 const WhoWeAre = () => {
   return (
@@ -25,7 +26,7 @@ const WhoWeAre = () => {
                   <div className="absolute bottom-0 left-0 w-full h-1 bg-orange-500"></div>
                 </span>
               </h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
+              <p className="text-lg text-gray-600 leading-relaxed text-justify">
                 Edu-Excellence & Consultancy is at your service with its rich course content and competent instructors 
                 in Course Centers based in Antalya, Istanbul, Porto and Amsterdam. Edu-Excellence & Consultancy, 
                 which is with you in the project writing phase, partnership establishment, project implementation 
@@ -35,9 +36,12 @@ const WhoWeAre = () => {
             </div>
 
             <div className="pt-4">
-              <button className="border-2 border-orange-500 text-orange-500 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-orange-500 hover:text-white transition-all duration-200 transform hover:scale-105">
-                GET STARTED
-              </button>
+              <Link
+                href="/about"
+                className="inline-flex border-2 border-orange-500 text-orange-500 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-orange-500 hover:text-white transition-all duration-200 transform hover:scale-105"
+              >
+                Details
+              </Link>
             </div>
           </div>
 

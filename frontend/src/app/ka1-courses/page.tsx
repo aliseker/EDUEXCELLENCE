@@ -29,6 +29,14 @@ interface Course {
 const KA1CoursesPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const stripHtml = (html: string) =>
+    html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
   const [filters, setFilters] = useState({
     search: '',
     location: '',
@@ -182,8 +190,10 @@ const KA1CoursesPage = () => {
 
   // Filter courses based on current filters (only not-past courses)
   const filteredCourses = notPastCourses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-                         course.description.toLowerCase().includes(filters.search.toLowerCase());
+    const query = filters.search.toLowerCase();
+    const matchesSearch =
+      course.title.toLowerCase().includes(query) ||
+      stripHtml(course.description || '').toLowerCase().includes(query);
     const matchesLocation = !filters.location || course.location.toLowerCase() === filters.location.toLowerCase();
     const matchesLevel = !filters.level || course.level === filters.level;
     const matchesApproved = filters.approved === 'all' || 
@@ -581,8 +591,8 @@ const KA1CoursesPage = () => {
 
                   {/* Course Content */}
                   <div className="p-4 flex flex-col flex-grow">
-                    <p className="text-gray-600 text-sm line-clamp-3 mb-4 flex-grow">
-                      {course.description}
+                    <p className="text-gray-600 text-sm line-clamp-3 mb-4 flex-grow break-words overflow-wrap-anywhere overflow-hidden">
+                      {stripHtml(course.description || '')}
                     </p>
 
                     <div className="space-y-2 mb-4">
