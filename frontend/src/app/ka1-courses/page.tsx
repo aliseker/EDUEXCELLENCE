@@ -44,7 +44,7 @@ const KA1CoursesPage = () => {
     approved: 'all'
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const coursesPerPage = 6;
+  const coursesPerPage = 9;
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
   const [showMonthSelector, setShowMonthSelector] = useState(false);
@@ -661,35 +661,39 @@ const KA1CoursesPage = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2">
+          <div className="flex justify-center items-center gap-3">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-md transition ${
+                currentPage === 1
+                  ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                  : 'text-blue-700 bg-white border-blue-200 hover:bg-blue-50 hover:border-blue-300'
+              }`}
             >
-              Previous
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Önceki
             </button>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`px-4 py-2 text-sm font-medium rounded-md ${
-                  page === currentPage
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            
+
+            <span className="text-sm font-semibold text-gray-700">
+              Sayfa {currentPage} / {totalPages}
+            </span>
+
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-md transition ${
+                currentPage === totalPages
+                  ? 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
+                  : 'text-blue-700 bg-white border-blue-200 hover:bg-blue-50 hover:border-blue-300'
+              }`}
             >
-              Next
+              Sonraki
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </button>
           </div>
         )}

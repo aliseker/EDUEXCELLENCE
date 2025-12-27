@@ -399,8 +399,10 @@ export default function KA2ProjectPage() {
                         <div className={`w-8 h-8 bg-gradient-to-br ${config.color} rounded-full flex items-center justify-center flex-shrink-0`}>
                           <span className="text-white font-semibold text-sm">{index + 1}</span>
                         </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900 mb-1">{activity}</h4>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 mb-1 break-words overflow-wrap-anywhere break-all leading-relaxed">
+                            {activity}
+                          </h4>
                         </div>
                       </div>
                     ))
