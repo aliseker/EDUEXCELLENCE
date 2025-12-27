@@ -12,7 +12,8 @@ namespace EduExcellence.Application.Services
     public sealed class HtmlSanitizerService : IHtmlSanitizerService
     {
         private readonly HtmlSanitizer _rich;
-        private static readonly Regex MultiSpace = new(@"\s+", RegexOptions.Compiled);
+        private static readonly Regex SpacesButKeepNewlines = new(@"[^\S\r\n]+", RegexOptions.Compiled); // collapse spaces/tabs, keep newlines
+        private static readonly Regex MultiNewlines = new(@"\n{3,}", RegexOptions.Compiled);
         private static readonly Regex StripTags = new("<[^>]*>", RegexOptions.Compiled);
 
         public HtmlSanitizerService()
@@ -86,10 +87,28 @@ namespace EduExcellence.Application.Services
         {
             if (string.IsNullOrWhiteSpace(html)) return string.Empty;
 
-            // First sanitize using allowlist to drop scripts/attrs, then remove remaining tags.
-            var safe = _rich.Sanitize(html);
-            var text = StripTags.Replace(safe, " ");
-            return MultiSpace.Replace(text, " ").Trim();
+            const string nlToken = "__SANITIZE_NL__";
+
+            // Normalize input newlines first and replace with token to survive sanitization
+            var normalized = (html ?? string.Empty).Replace("\r\n", "\n").Replace("\r", "\n");
+            normalized = normalized.Replace("\n", nlToken);
+
+            // First sanitize using allowlist to drop scripts/attrs
+            var safe = _rich.Sanitize(normalized);
+
+            // Convert tokens and common tags back to newline
+            safe = safe.Replace(nlToken, "\n", StringComparison.Ordinal);
+            safe = Regex.Replace(safe, @"<br\s*/?>", "\n", RegexOptions.IgnoreCase);
+            safe = Regex.Replace(safe, @"</(p|div|li|h[1-6])>", "\n", RegexOptions.IgnoreCase);
+
+            // Strip remaining tags but keep line breaks
+            var textWithBreaks = StripTags.Replace(safe, " ");
+
+            // Collapse spaces/tabs but preserve newlines; limit consecutive newlines
+            textWithBreaks = SpacesButKeepNewlines.Replace(textWithBreaks, " ");
+            textWithBreaks = MultiNewlines.Replace(textWithBreaks, "\n\n");
+
+            return textWithBreaks.Trim();
         }
     }
 }

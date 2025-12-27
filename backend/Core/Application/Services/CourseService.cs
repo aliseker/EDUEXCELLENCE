@@ -91,7 +91,8 @@ namespace EduExcellence.Application.Services
             {
                 for (var i = 0; i < dto.DailyPrograms.Count; i++)
                 {
-                    var safeProgram = _sanitizer.SanitizeToPlainText(dto.DailyPrograms[i]);
+                    // Allow line breaks / simple rich text (e.g., <br>, <p>) in daily programs
+                    var safeProgram = _sanitizer.SanitizeRichText(dto.DailyPrograms[i]);
                     if (string.IsNullOrWhiteSpace(safeProgram)) continue;
 
                     var dailyProgram = new CourseDailyProgram
@@ -160,7 +161,8 @@ namespace EduExcellence.Application.Services
             {
                 for (var i = 0; i < dto.DailyPrograms.Count; i++)
                 {
-                    var safeProgram = _sanitizer.SanitizeToPlainText(dto.DailyPrograms[i]);
+                    // Allow line breaks / simple rich text (e.g., <br>, <p>) in daily programs
+                    var safeProgram = _sanitizer.SanitizeRichText(dto.DailyPrograms[i]);
                     if (string.IsNullOrWhiteSpace(safeProgram)) continue;
 
                     var dailyProgram = new CourseDailyProgram

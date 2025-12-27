@@ -364,9 +364,17 @@ export default function AdminHome() {
         dayLabel.appendChild(dayBadge);
         dayLabel.appendChild(dayText);
         
+        // Normalize stored HTML (<br>, <p>) back to plain textarea newlines for editing
+        const rawExisting = existingProgram?.[i] || '';
+        const normalizedExisting = rawExisting
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/(p|div|li)>/gi, '\n')
+          .replace(/<(p|div|ul|ol|li)[^>]*>/gi, '')
+          .trim();
+
         const statusSpan = document.createElement('span');
         statusSpan.className = 'text-xs text-gray-500';
-        statusSpan.textContent = (existingProgram?.[i] || '').length > 0 ? '✅' : '⏳';
+        statusSpan.textContent = normalizedExisting.length > 0 ? '✅' : '⏳';
         
         labelRow.appendChild(dayLabel);
         labelRow.appendChild(statusSpan);
@@ -376,7 +384,7 @@ export default function AdminHome() {
         textarea.rows = 2;
         textarea.placeholder = `Enter Day ${i + 1} program details...`;
         textarea.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 text-gray-900 resize-none';
-        textarea.value = existingProgram?.[i] || '';
+        textarea.value = normalizedExisting;
         textarea.oninput = function() {
           (window as any).updateDayStatus(i + 1, (this as HTMLTextAreaElement).value);
         };
@@ -401,7 +409,7 @@ export default function AdminHome() {
         const existingValues: string[] = [];
         const dailyFields = document.getElementById('dailyFields');
         if (dailyFields) {
-          const inputs = dailyFields.querySelectorAll('input[name^="day_"]');
+          const inputs = dailyFields.querySelectorAll('textarea[name^="day_"]');
           inputs.forEach((input: any) => {
             existingValues.push(input.value);
           });
@@ -981,7 +989,8 @@ export default function AdminHome() {
           const dayInputs = form.querySelectorAll('textarea[name^="day_"]');
           dayInputs.forEach((input: any) => {
             if (input.value.trim()) {
-              dailyProgramData.push(input.value.trim());
+              // Preserve line breaks by converting to <br> for storage/render
+              dailyProgramData.push(input.value.replace(/\r?\n/g, '<br>'));
             }
           });
 

@@ -353,7 +353,19 @@ export default function CourseDetailPage() {
                           Day {index + 1}
                         </div>
                       </div>
-                      <p className="text-gray-700 font-medium break-words overflow-wrap-anywhere">{day}</p>
+                      <div
+                        className="prose prose-sm max-w-none text-gray-700 break-words overflow-wrap-anywhere"
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            DOMPurify && day
+                              ? DOMPurify.sanitize(day, {
+                                  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'ol', 'ul', 'li', 'div', 'span'],
+                                  ALLOWED_ATTR: ['class'],
+                                  FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                                })
+                              : (day || '').replace(/\n/g, '<br>'),
+                        }}
+                      />
                     </div>
                   );
                 })}
