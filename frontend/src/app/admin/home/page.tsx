@@ -1119,13 +1119,85 @@ export default function AdminHome() {
             // Logo silindi
             logoBase64 = null;
           } else if (ka2LogoFile) {
-            // Yeni logo yüklendi
-            logoBase64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = (e) => resolve(e.target?.result as string);
-              reader.onerror = () => reject(new Error('Failed to read logo file'));
-              reader.readAsDataURL(ka2LogoFile);
-            });
+            // Yeni logo yüklendi - Blog'taki gibi sıkıştırma uygula
+            try {
+              logoBase64 = await new Promise<string>((resolve, reject) => {
+                try {
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+                  const img = new Image();
+                  
+                  img.onload = () => {
+                    try {
+                      // Logo için daha küçük boyut (logo olduğu için)
+                      const maxWidth = 400;
+                      const maxHeight = 300;
+                      let { width, height } = img;
+                      
+                      if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                      }
+                      if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                      }
+                      
+                      canvas.width = width;
+                      canvas.height = height;
+                      ctx?.drawImage(img, 0, 0, width, height);
+                      
+                      // WebP veya JPEG formatında sıkıştır
+                      let compressedDataUrl = canvas.toDataURL('image/webp', 0.8);
+                      if (compressedDataUrl.length === 0 || compressedDataUrl.includes('data:,')) {
+                        compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                      }
+                      
+                      // Hala büyükse daha fazla sıkıştır
+                      if (compressedDataUrl.length > 500000) { // 500KB limit
+                        if (compressedDataUrl.includes('image/webp')) {
+                          compressedDataUrl = canvas.toDataURL('image/webp', 0.6);
+                        } else {
+                          compressedDataUrl = canvas.toDataURL('image/jpeg', 0.5);
+                        }
+                      }
+                      
+                      resolve(compressedDataUrl);
+                    } catch (error) {
+                      console.error('Error compressing logo:', error);
+                      reject(error);
+                    }
+                  };
+                  
+                  img.onerror = () => {
+                    console.error('Error loading logo image');
+                    reject(new Error('Failed to load logo image'));
+                  };
+                  
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    img.src = e.target?.result as string;
+                  };
+                  reader.onerror = () => {
+                    console.error('Error reading logo file');
+                    reject(new Error('Failed to read logo file'));
+                  };
+                  reader.readAsDataURL(ka2LogoFile);
+                } catch (error) {
+                  console.error('Error in logo processing:', error);
+                  reject(error);
+                }
+              });
+            } catch (error) {
+              // Fallback: simple base64 conversion without compression
+              console.error('Logo compression failed, using fallback:', error);
+              logoBase64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target?.result as string);
+                reader.onerror = () => reject(new Error('Failed to read logo file'));
+                reader.readAsDataURL(ka2LogoFile);
+              });
+            }
           }
           // Eğer ne yeni logo yüklendi ne de silindi, mevcut logo korunur (logoBase64 = editingItem?.logoBase64)
 
