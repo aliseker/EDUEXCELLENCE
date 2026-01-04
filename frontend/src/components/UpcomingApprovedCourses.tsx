@@ -141,7 +141,7 @@ const UpcomingApprovedCourses = () => {
             <div className="bg-gradient-to-r from-orange-50 to-red-50 px-4 py-3 border-b border-orange-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-orange-800 mb-1">🗓️ Upcoming and Approved Courses</h2>
+                  <h2 className="text-xl font-bold text-orange-800 mb-1">🗓️ Upcoming and Confirmed Courses</h2>
                   <p className="text-orange-600 text-xs">
                     {selectedMonth && coursesByMonth[selectedMonth] 
                       ? `${selectedMonth} - ${Math.min(coursesByMonth[selectedMonth].length, 4)} courses`
@@ -228,7 +228,7 @@ const UpcomingApprovedCourses = () => {
                     <div className="text-center py-12">
                       <div className="text-6xl mb-4">📅</div>
                       <h3 className="text-xl font-semibold text-gray-700 mb-2">No upcoming courses for this month</h3>
-                      <p className="text-gray-500">There are no approved courses scheduled for {selectedMonth}</p>
+                      <p className="text-gray-500">There are no confirmed courses scheduled for {selectedMonth}</p>
                     </div>
                   );
                 }
@@ -262,7 +262,7 @@ const UpcomingApprovedCourses = () => {
                           
                           <div className="mb-3">
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              ✓ Approved
+                              ✓ Confirmed
                             </span>
                           </div>
                           

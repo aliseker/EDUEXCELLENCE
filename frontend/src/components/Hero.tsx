@@ -223,7 +223,7 @@ const Hero = () => {
                     
                     <text x="60" y="50" textAnchor="middle" fill="#1F2937" fontSize="14" fontFamily="Arial, sans-serif" fontWeight="bold">CERTIFICATE</text>
                     <text x="60" y="65" textAnchor="middle" fill="#6B7280" fontSize="10" fontFamily="Arial, sans-serif">Erasmus+</text>
-                    <text x="60" y="75" textAnchor="middle" fill="#6B7280" fontSize="10" fontFamily="Arial, sans-serif">Approved</text>
+                    <text x="60" y="75" textAnchor="middle" fill="#6B7280" fontSize="10" fontFamily="Arial, sans-serif">Confirmed</text>
                   </g>
                   
                   {/* Globe/World - Right */}
@@ -289,7 +289,7 @@ const Hero = () => {
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-gray-900">Certified Education</div>
-                    <div className="text-xs text-gray-500">EU Approved</div>
+                    <div className="text-xs text-gray-500">EU Confirmed</div>
                   </div>
                 </div>
               </div>

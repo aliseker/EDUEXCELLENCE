@@ -269,7 +269,7 @@ const KA1CoursesPage = () => {
               <div className="bg-gradient-to-r from-orange-50 to-red-50 px-4 py-3 border-b border-orange-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-orange-800 mb-1">🗓️ Upcoming and Approved Courses</h2>
+                    <h2 className="text-xl font-bold text-orange-800 mb-1">🗓️ Upcoming and Confirmed Courses</h2>
                     <p className="text-orange-600 text-xs">
                       {selectedMonth && coursesByMonth[selectedMonth] 
                         ? `${selectedMonth} - ${Math.min(coursesByMonth[selectedMonth].length, 4)} courses`
@@ -356,7 +356,7 @@ const KA1CoursesPage = () => {
                       <div className="text-center py-12">
                         <div className="text-6xl mb-4">📅</div>
                         <h3 className="text-xl font-semibold text-gray-700 mb-2">No upcoming courses for this month</h3>
-                        <p className="text-gray-500">There are no approved courses scheduled for {selectedMonth}</p>
+                        <p className="text-gray-500">There are no confirmed courses scheduled for {selectedMonth}</p>
                       </div>
                     );
                   }
@@ -367,7 +367,7 @@ const KA1CoursesPage = () => {
                       <div className="text-center py-12">
                         <div className="text-6xl mb-4">📅</div>
                         <h3 className="text-xl font-semibold text-gray-700 mb-2">No upcoming courses available</h3>
-                        <p className="text-gray-500">There are no approved courses scheduled for the upcoming months</p>
+                        <p className="text-gray-500">There are no confirmed courses scheduled for the upcoming months</p>
                       </div>
                     );
                   }
@@ -402,7 +402,7 @@ const KA1CoursesPage = () => {
                             
                             <div className="mb-3">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                ✓ Approved
+                                ✓ Confirmed
                               </span>
                             </div>
                             
@@ -523,8 +523,8 @@ const KA1CoursesPage = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 bg-white"
               >
                 <option value="all">All Courses</option>
-                <option value="approved">Approved Courses</option>
-                <option value="pending">Pending Courses</option>
+                <option value="approved">Confirmed Courses</option>
+                <option value="pending">Structured Courses</option>
               </select>
             </div>
           </div>
@@ -625,14 +625,14 @@ const KA1CoursesPage = () => {
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
-                          Approved Course
+                          Confirmed Course
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                           <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
                           </svg>
-                          Pending Approval
+                          Structured
                         </span>
                       )}
                     </div>

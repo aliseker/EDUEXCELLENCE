@@ -472,8 +472,8 @@ const LatestCourses = () => {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 bg-white"
               >
                 <option value="all">All Courses</option>
-                <option value="approved">Approved Courses</option>
-                <option value="pending">Pending Courses</option>
+                <option value="approved">Confirmed Courses</option>
+                <option value="pending">Structured Courses</option>
               </select>
             </div>
           </div>

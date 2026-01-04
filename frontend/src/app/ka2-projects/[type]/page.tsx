@@ -257,7 +257,7 @@ export default function KA2ProjectPage() {
       {/* Project Overview */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-6">
                 Project <span className={`text-transparent bg-clip-text bg-gradient-to-r ${config.color}`}>Overview</span>
