@@ -25,6 +25,8 @@ export default function AdminHome() {
   const [formKey, setFormKey] = useState(0); // Form reset için
   const [adminData, setAdminData] = useState<any>(null); // Admin bilgileri için
   const [ka2DescriptionHtml, setKa2DescriptionHtml] = useState<string>('');
+  const [ka2LogoFile, setKa2LogoFile] = useState<File | null>(null);
+  const [ka2LogoPreview, setKa2LogoPreview] = useState<string | null>(null);
   const router = useRouter();
 
   // DOMPurify only works in browser (consistent with other pages)
@@ -481,6 +483,14 @@ export default function AdminHome() {
     // Yeni resim seçimlerini temizle
     setSelectedImages([]);
     setImagePreviews([]);
+    
+    // KA2 proje logosu için preview yükle
+    if (type === 'ka2project' && item?.logoBase64) {
+      setKa2LogoPreview(item.logoBase64);
+    } else {
+      setKa2LogoPreview(null);
+    }
+    setKa2LogoFile(null);
     
     setShowModal(true);
     if (type === 'ka1course') {
@@ -1103,6 +1113,22 @@ export default function AdminHome() {
                 })
               : (typeof data.description === 'string' ? data.description : '');
 
+          // Convert logo file to base64 if uploaded, or handle deletion
+          let logoBase64 = editingItem?.logoBase64 || null;
+          if (ka2LogoPreview === 'DELETE_LOGO') {
+            // Logo silindi
+            logoBase64 = null;
+          } else if (ka2LogoFile) {
+            // Yeni logo yüklendi
+            logoBase64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = (e) => resolve(e.target?.result as string);
+              reader.onerror = () => reject(new Error('Failed to read logo file'));
+              reader.readAsDataURL(ka2LogoFile);
+            });
+          }
+          // Eğer ne yeni logo yüklendi ne de silindi, mevcut logo korunur (logoBase64 = editingItem?.logoBase64)
+
           const projectData = {
             title: data.title,
             description: sanitizedDescription,
@@ -1113,7 +1139,8 @@ export default function AdminHome() {
             activities: data.activities ? data.activities.split('\n').filter((activity: string) => activity.trim()) : [],
             targetGroup: data.targetGroup,
             budget: data.projectValue,
-            isActive: true
+            isActive: true,
+            logoBase64: logoBase64
           };
 
           if (editingItem) {
@@ -3115,6 +3142,67 @@ export default function AdminHome() {
                         required
                       />
                     </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-900 mb-2">Proje Logosu</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setKa2LogoFile(file);
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              setKa2LogoPreview(event.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-black"
+                      />
+                      {ka2LogoPreview && ka2LogoPreview !== 'DELETE_LOGO' && (
+                        <div className="mt-2 space-y-2">
+                          <img 
+                            src={ka2LogoPreview} 
+                            alt="Logo preview" 
+                            className="max-w-[200px] max-h-[200px] object-contain border border-gray-300 rounded" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setKa2LogoFile(null);
+                              setKa2LogoPreview('DELETE_LOGO');
+                            }}
+                            className="text-sm text-red-600 hover:text-red-700 underline"
+                          >
+                            Logoyu Sil
+                          </button>
+                        </div>
+                      )}
+                      {!ka2LogoPreview && editingItem?.logoBase64 && (
+                        <div className="mt-2 space-y-2">
+                          <img 
+                            src={editingItem.logoBase64} 
+                            alt="Current logo" 
+                            className="max-w-[200px] max-h-[200px] object-contain border border-gray-300 rounded" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setKa2LogoPreview('DELETE_LOGO');
+                            }}
+                            className="text-sm text-red-600 hover:text-red-700 underline"
+                          >
+                            Logoyu Sil
+                          </button>
+                        </div>
+                      )}
+                      {ka2LogoPreview === 'DELETE_LOGO' && (
+                        <div className="mt-2 text-sm text-gray-500">
+                          Logo silinecek
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
@@ -3128,6 +3216,8 @@ export default function AdminHome() {
                       setImagePreviews([]);
                       setFormKey(prev => prev + 1); // Form'u reset et
                       setKa2DescriptionHtml('');
+                      setKa2LogoFile(null);
+                      setKa2LogoPreview(null);
                       ka2DescriptionEditor?.commands.setContent('', { emitUpdate: false });
                       // Refresh data when modal is closed
                       fetchData();

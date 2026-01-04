@@ -100,7 +100,7 @@ const BlogSection = () => {
               </div>
             </div>
             
-            <h3 className="text-2xl lg:text-3xl font-black text-gray-800 mb-4 leading-tight group-hover:text-blue-600 transition-colors overflow-hidden" style={{
+            <h3 className="text-xl lg:text-2xl font-black text-gray-800 mb-4 leading-tight group-hover:text-blue-600 transition-colors overflow-hidden" style={{
               display: '-webkit-box',
               WebkitLineClamp: 3,
               WebkitBoxOrient: 'vertical'

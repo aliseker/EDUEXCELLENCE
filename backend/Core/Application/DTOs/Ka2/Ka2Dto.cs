@@ -16,6 +16,7 @@ namespace EduExcellence.Application.DTOs.Ka2
         public string TargetGroup { get; set; } = string.Empty;
         public string Budget { get; set; } = string.Empty;
         public bool IsActive { get; set; }
+        public string? LogoBase64 { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }
@@ -56,6 +57,7 @@ namespace EduExcellence.Application.DTOs.Ka2
         public string Budget { get; set; } = string.Empty;
 
         public bool IsActive { get; set; } = true;
+        public string? LogoBase64 { get; set; }
     }
 
     public class UpdateKa2ProjectDto : CreateKa2ProjectDto

@@ -24,6 +24,7 @@ interface Ka2Project {
   checkProject?: string;
   isActive: boolean;
   imageUrl?: string;
+  logoBase64?: string;
   tags: string[];
   createdAt: string;
   updatedAt?: string;
@@ -350,6 +351,22 @@ export default function KA2ProjectPage() {
             </div>
             
             <div className="relative">
+              {/* Project Logo */}
+              {project?.logoBase64 && (
+                <div className="mb-6 grid grid-cols-2 gap-4">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex justify-center items-center">
+                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 inline-block">
+                      <img 
+                        src={project.logoBase64} 
+                        alt="Project Logo" 
+                        className="max-w-[160px] max-h-[90px] w-auto h-auto object-contain"
+                      />
+                    </div>
+                  </div>
+                  <div></div>
+                </div>
+              )}
+
               {/* Partners and Project Value */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -378,7 +395,7 @@ export default function KA2ProjectPage() {
               </div>
 
               {/* Project Details */}
-              {project && (
+              {project && !project.logoBase64 && (
                 <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200 mb-8">
                   <h3 className="text-2xl font-bold text-gray-900 mb-6">Project Details</h3>
                   <div className="grid grid-cols-1 gap-4">

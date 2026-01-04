@@ -17,6 +17,7 @@ namespace EduExcellence.Domain.Entities
         public string Budget { get; set; } = string.Empty;
         public new bool IsActive { get; set; } = true;
         public string? ImageUrl { get; set; }
+        public string? LogoBase64 { get; set; }
         public List<string> Tags { get; set; } = new();
         
         // Navigation property for Meetings

@@ -140,6 +140,7 @@ namespace EduExcellence.Infrastructure.Persistence.Context
                 entity.Property(e => e.TargetGroup).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Budget).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.ImageUrl).HasColumnType("nvarchar(max)");
+                entity.Property(e => e.LogoBase64).HasColumnType("nvarchar(max)");
             });
 
             // SocialMedia configuration

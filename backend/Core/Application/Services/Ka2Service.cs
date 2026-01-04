@@ -98,6 +98,7 @@ namespace EduExcellence.Application.Services
                     TargetGroup = _sanitizer.SanitizeToPlainText(dto.TargetGroup),
                     Budget = _sanitizer.SanitizeToPlainText(dto.Budget),
                     IsActive = dto.IsActive,
+                    LogoBase64 = dto.LogoBase64,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -138,6 +139,7 @@ namespace EduExcellence.Application.Services
                 project.TargetGroup = _sanitizer.SanitizeToPlainText(dto.TargetGroup);
                 project.Budget = _sanitizer.SanitizeToPlainText(dto.Budget);
                 project.IsActive = dto.IsActive;
+                project.LogoBase64 = dto.LogoBase64;
                 project.UpdatedAt = DateTime.UtcNow;
 
                 await _unitOfWork.Ka2Projects.UpdateAsync(project);
@@ -187,6 +189,7 @@ namespace EduExcellence.Application.Services
                 TargetGroup = project.TargetGroup,
                 Budget = project.Budget,
                 IsActive = project.IsActive,
+                LogoBase64 = project.LogoBase64,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt
             };
